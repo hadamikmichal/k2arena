@@ -1,0 +1,14 @@
+# Lokalna baza Postgres do developmentu: docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: k2
+      POSTGRES_PASSWORD: k2
+      POSTGRES_DB: grafik
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

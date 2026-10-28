@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #f0efec;
+  --border: #e2e1dc;
+  --text: #121212;
+  --text-2: #52514e;
+  --muted: #8a8984;
+  --accent: #e2001a; /* czerwień K2 */
+  --accent-ink: #ffffff;
+  --series-op: #2a78d6;
+  --series-rs: #eb6834;
+  --series-sec: #1baf7a;
+  --err: #c62828;
+  --err-bg: #fdecec;
+  --warn: #8a5a00;
+  --warn-bg: #fff4d6;
+  --ok: #1b7a3d;
+  --ok-bg: #e6f4ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: #33332f;
+    --text: #f0efec;
+    --text-2: #c3c2b7;
+    --muted: #8f8e86;
+    --accent: #ff3347;
+    --series-op: #3987e5;
+    --series-rs: #d95926;
+    --series-sec: #199e70;
+    --err: #ff8a80;
+    --err-bg: #3a1615;
+    --warn: #ffd166;
+    --warn-bg: #362a0c;
+    --ok: #7bd99a;
+    --ok-bg: #12301d;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer components {
+  .card { @apply rounded-xl border p-4; background: var(--surface); border-color: var(--border); }
+  .btn { @apply inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer; background: var(--surface); border-color: var(--border); color: var(--text); }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: var(--accent); filter: brightness(1.08); }
+  .btn-danger { color: var(--err); }
+  .input { @apply w-full rounded-lg border px-2.5 py-1.5 text-sm; background: var(--surface); border-color: var(--border); color: var(--text); }
+  .input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .label { @apply mb-1 block text-xs font-medium; color: var(--text-2); }
+  .muted { color: var(--muted); }
+  .text-2 { color: var(--text-2); }
+  .table { @apply w-full text-sm; }
+  .table th { @apply px-3 py-2 text-left text-xs font-medium; color: var(--text-2); border-bottom: 1px solid var(--border); }
+  .table td { @apply px-3 py-2; border-bottom: 1px solid var(--border); }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; background: var(--surface-2); color: var(--text-2); }
+  .alert-error { @apply rounded-lg px-3 py-2 text-sm; background: var(--err-bg); color: var(--err); }
+  .alert-warn { @apply rounded-lg px-3 py-2 text-sm; background: var(--warn-bg); color: var(--warn); }
+  .alert-ok { @apply rounded-lg px-3 py-2 text-sm; background: var(--ok-bg); color: var(--ok); }
+}

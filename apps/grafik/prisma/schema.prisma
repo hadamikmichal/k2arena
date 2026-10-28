@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Postgres: na Vercelu baza Neon (integracja Marketplace ustawia obie zmienne).
+// DATABASE_URL – połączenie przez pooler, DATABASE_URL_UNPOOLED – bezpośrednie (migracje).
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Role: ADMIN (układa grafik) | INSTRUCTOR (podgląd własnego grafiku)
+// Zatrudnienie: STALY (pn–pt) | ZLECENIE (zleceniobiorcy / studenci, sb–nd)
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  passwordHash   String
+  role           String           @default("INSTRUCTOR")
+  employment     String           @default("STALY")
+  color          String           @default("#2563eb")
+  active         Boolean          @default(true)
+  icalToken      String           @unique @default(cuid())
+  createdAt      DateTime         @default(now())
+  shifts         Shift[]
+  sectionSeries  SectionSeries[]
+  sectionSessions SectionSession[]
+}
+
+// Zmiana w grafiku. Typ: OPERATOR (dyżur operatora ściany) | ROUTESETTING
+// Data jako "YYYY-MM-DD", godziny jako minuty od północy (czas lokalny Europe/Warsaw).
+model Shift {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          String
+  startMin      Int
+  endMin        Int
+  type          String   @default("OPERATOR")
+  note          String?
+  googleEventId String?
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@index([userId, date])
+}
+
+// Cykliczna sekcja (np. "Dzieci 7–10 lat", wtorki 16:30–18:00)
+model SectionSeries {
+  id        String           @id @default(cuid())
+  name      String
+  kind      String           @default("DZIECI") // DZIECI | DOROSLI
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  weekday   Int              // 1 = poniedziałek ... 7 = niedziela
+  startMin  Int
+  endMin    Int
+  validFrom String
+  validTo   String
+  active    Boolean          @default(true)
+  sessions  SectionSession[]
+}
+
+// Pojedyncze zajęcia sekcji (wygenerowane z serii albo jednorazowe).
+// Status: PLANNED | DONE | CANCELLED
+model SectionSession {
+  id            String         @id @default(cuid())
+  seriesId      String?
+  series        SectionSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name          String
+  kind          String         @default("DZIECI")
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  date          String
+  startMin      Int
+  endMin        Int
+  status        String         @default("PLANNED")
+  note          String?
+  googleEventId String?
+  updatedAt     DateTime       @updatedAt
+
+  @@index([date])
+  @@index([userId, date])
+}
+
+// Ustawienia reguł grafiku (JSON) – klucz "rules"
+model Setting {
+  key   String @id
+  value String
+}
