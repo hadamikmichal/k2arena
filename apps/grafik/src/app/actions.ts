@@ -14,6 +14,7 @@ import { deleteGoogleEvent, syncRange, syncSession, syncShift } from "@/lib/goog
 import { addDays, dateRange, isoWeekday, monthBounds, toMin, todayWarsaw } from "@/lib/time";
 import { runGenerator } from "@/lib/planning";
 import type { Rules } from "@/lib/rules";
+import { EMPLOYMENT_TYPES } from "@/lib/employment";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -141,7 +142,7 @@ const userSchema = z.object({
   name: z.string().trim().min(2, "Podaj imię i nazwisko"),
   email: z.string().trim().toLowerCase().email("Nieprawidłowy e-mail"),
   role: z.enum(["ADMIN", "INSTRUCTOR"]),
-  employment: z.enum(["STALY", "ZLECENIE"]),
+  employment: z.enum(EMPLOYMENT_TYPES),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   password: z.string().optional(),
 });

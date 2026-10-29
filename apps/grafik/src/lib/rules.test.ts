@@ -75,3 +75,11 @@ test("helpers", () => {
     count: 2, at: { startMin: 5, endMin: 10 },
   });
 });
+
+test("instruktor sekcji jako operator w dzień roboczy / na routesettingu – ostrzeżenie", () => {
+  const issues = validateDay(MON, [op("A", 10, 22), op("M", 12, 18, { employment: "SEKCJA" }), op("M", 8, 12, { type: "ROUTESETTING", employment: "SEKCJA" })], []);
+  assert.ok(issues.some((i) => i.message.includes("operatorem tylko w weekend")));
+  assert.ok(issues.some((i) => i.message.includes("nie robi routesettingu")));
+  const sat = validateDay(SAT, [op("M", 9, 21, { date: SAT, employment: "SEKCJA" })], []);
+  assert.ok(!sat.some((i) => i.userId === "M" && i.level === "warning"));
+});

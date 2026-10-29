@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { computeStats } from "@/lib/stats";
 import { fmtDate, fmtHours, monthBounds, todayWarsaw } from "@/lib/time";
 import { HoursChart } from "@/components/HoursChart";
+import { EMPLOYMENT_SHORT } from "@/lib/employment";
 
 const isDate = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
@@ -86,7 +87,7 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
                 <td className="whitespace-nowrap">
                   <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
                   {s.name}
-                  <span className="badge ml-2">{s.employment === "STALY" ? "stały" : "zlecenie"}</span>
+                  <span className="badge ml-2">{EMPLOYMENT_SHORT[s.employment]}</span>
                 </td>
                 <td className="text-right tabular-nums">{s.daysWorked}</td>
                 <td className="text-right tabular-nums">{fmtHours(s.operatorMin)}</td>

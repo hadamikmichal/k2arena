@@ -52,6 +52,7 @@ export type SessionLike = Interval & {
   id?: string;
   userId: string;
   userName?: string;
+  employment?: string;
   date: string;
   name: string;
   status: string;
@@ -177,7 +178,14 @@ export function validateDay(
         });
       }
     }
-    if (s.employment) {
+    if (s.employment === "SEKCJA") {
+      const staffDay = rules.staffDays.includes(wd);
+      if (s.type === "ROUTESETTING") {
+        issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: instruktor sekcji nie robi routesettingu` });
+      } else if (staffDay) {
+        issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: instruktor sekcji może być operatorem tylko w weekend` });
+      }
+    } else if (s.employment) {
       const staffDay = rules.staffDays.includes(wd);
       if (staffDay && s.employment !== "STALY") {
         issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: zleceniobiorca w dzień roboczy (dni stałych instruktorów)` });
@@ -223,7 +231,9 @@ export function validateDay(
     }
     // Minimum godzin pracy w dniu (dyżur + routesetting + sekcje, bez podwójnego liczenia).
     const worked = total(merge([...e.shifts, ...e.sessions]));
-    if (worked > 0 && worked < rules.minDailyMin) {
+    // Instruktor sekcji przychodzi tylko na swoje zajęcia – minimum godzin go wtedy nie dotyczy.
+    const sectionOnly = e.shifts.length === 0 && e.sessions.some((x) => x.employment === "SEKCJA");
+    if (worked > 0 && worked < rules.minDailyMin && !sectionOnly) {
       issues.push({ level: "warning", date, userId, message: `${who}: tylko ${worked / 60} h pracy – minimum to ${rules.minDailyMin / 60} h` });
     }
   }

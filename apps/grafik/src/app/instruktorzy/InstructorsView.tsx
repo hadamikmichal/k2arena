@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveUser, toggleUserActive } from "../actions";
 import { Modal } from "@/components/Modal";
 import { CopyButton } from "@/components/CopyButton";
+import { EMPLOYMENT_LABEL, EMPLOYMENT_TYPES } from "@/lib/employment";
 
 type UserRow = { id: string; name: string; email: string; role: string; employment: string; color: string; active: boolean; icalToken: string };
 
@@ -42,7 +43,7 @@ export function InstructorsView({ users, selfId, appUrl }: { users: UserRow[]; s
                   <div className="text-xs muted">{u.email}</div>
                 </td>
                 <td>{u.role === "ADMIN" ? "Administrator" : "Instruktor"}</td>
-                <td>{u.role === "ADMIN" ? "—" : u.employment === "STALY" ? "Stały (pn–pt)" : "Zlecenie / student (sb–nd)"}</td>
+                <td>{u.role === "ADMIN" ? "—" : EMPLOYMENT_LABEL[u.employment]}</td>
                 <td><CopyButton text={`${appUrl}/api/ical/${u.icalToken}`} label="Kopiuj link" /></td>
                 <td className="whitespace-nowrap text-right">
                   <button className="btn mr-1" onClick={() => setModal({ user: u })}>Edytuj</button>
@@ -95,8 +96,7 @@ function UserForm({ user, onDone }: { user?: UserRow; onDone: () => void }) {
         <div>
           <label className="label">Zatrudnienie</label>
           <select name="employment" defaultValue={user?.employment ?? "STALY"} className="input">
-            <option value="STALY">Stały (pn–pt)</option>
-            <option value="ZLECENIE">Zlecenie / student</option>
+            {EMPLOYMENT_TYPES.map((t) => <option key={t} value={t}>{EMPLOYMENT_LABEL[t]}</option>)}
           </select>
         </div>
       </div>

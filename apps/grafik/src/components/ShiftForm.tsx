@@ -4,6 +4,7 @@ import { useActionState, useEffect, useTransition } from "react";
 import { deleteShift, saveShift } from "@/app/actions";
 import { fmtMin } from "@/lib/time";
 import type { ShiftDTO, UserOpt } from "./types";
+import { EMPLOYMENT_SHORT } from "@/lib/employment";
 
 export function ShiftForm({ shift, defaults, users, onDone }: {
   shift?: ShiftDTO;
@@ -32,7 +33,7 @@ export function ShiftForm({ shift, defaults, users, onDone }: {
         <select name="userId" defaultValue={v.userId ?? ""} className="input" required>
           <option value="" disabled>— wybierz —</option>
           {users.filter((u) => u.active !== false || u.id === v.userId).map((u) => (
-            <option key={u.id} value={u.id}>{u.name} ({u.employment === "STALY" ? "stały" : "zlecenie"})</option>
+            <option key={u.id} value={u.id}>{u.name} ({EMPLOYMENT_SHORT[u.employment]})</option>
           ))}
         </select>
       </div>

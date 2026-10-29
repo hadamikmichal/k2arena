@@ -1,7 +1,7 @@
 // Automatyczne układanie grafiku – czysta funkcja (bez bazy), łatwa do testowania.
 //
 // Dla każdego dnia, od rana:
-//  1. routesetting (pn–śr) – jeden instruktor stały w oknie routesettingu,
+//  1. routesetting (pn–śr) – jeden instruktor stały w oknie routesettingu (nigdy instruktor sekcji),
 //  2. dyżur operatora – zachłannie: bierze najwcześniejszy niepokryty moment i wybiera instruktora,
 //     który jest wtedy dostępny, nie przekroczy limitu osób naraz i da najwięcej pokrycia.
 //     Prowadzący sekcję nie liczy się w jej trakcie jako operator (tak jak w walidacji).
@@ -9,6 +9,7 @@
 // (prowadzi sekcję), wyrównanie godzin w miesiącu.
 import { merge, validateDay, type Interval, type Issue, type Rules, type SessionLike, type ShiftLike } from "./rules.ts";
 import { fmtMin, isoWeekday } from "./time.ts";
+import { canTakeShift, fitsDay } from "./employment.ts";
 
 const SLOT = 15;
 
@@ -94,6 +95,7 @@ export function generateSchedule(input: GenInput): GenResult {
       const w = rules.routesettingWindow;
       const iv = { startMin: w.startMin, endMin: Math.min(w.endMin, w.startMin + rules.routesettingLenMin) };
       const best = users
+        .filter((u) => canTakeShift(u.employment, "ROUTESETTING", staffDay))
         .filter((u) => availability(u).some((a) => a.startMin <= iv.startMin && a.endMin >= iv.endMin))
         .filter((u) => fitEnd(u.id, iv.startMin, iv.endMin) === iv.endMin)
         .map((u) => ({ u, score: (u.employment === "STALY" ? 500 : 0) - fairness(u.id) }))
@@ -115,6 +117,7 @@ export function generateSchedule(input: GenInput): GenResult {
 
       let best: { u: GenUser; iv: Interval; score: number } | null = null;
       for (const u of users) {
+        if (!canTakeShift(u.employment, "OPERATOR", staffDay)) continue;
         if (dayShifts.some((s) => s.userId === u.id && s.type === "OPERATOR")) continue;
         const a = availability(u).find((x) => covers(x, t));
         if (!a) continue;
@@ -130,7 +133,7 @@ export function generateSchedule(input: GenInput): GenResult {
         if (gain === 0) continue;
         const score =
           gain +
-          ((u.employment === "STALY") === staffDay ? 240 : -240) +
+          (fitsDay(u.employment, staffDay) ? 240 : -240) +
           (daySessions.some((s) => s.userId === u.id) ? 120 : 0) -
           (dayShifts.some((s) => s.userId === u.id) ? 200 : 0) -
           fairness(u.id);
@@ -148,7 +151,7 @@ export function generateSchedule(input: GenInput): GenResult {
     issues[date] = validateDay(
       date,
       dayShifts.map(named),
-      daySessions.map((s) => ({ ...s, userName: byId.get(s.userId)?.name })),
+      daySessions.map((s) => ({ ...s, userName: byId.get(s.userId)?.name, employment: byId.get(s.userId)?.employment })),
       rules,
     );
     for (const s of daySessions) {

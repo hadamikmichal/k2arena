@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { computeStats } from "@/lib/stats";
+import { EMPLOYMENT_SHORT } from "@/lib/employment";
 
 const isDate = (s: string | null) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const h = (min: number) => (min / 60).toFixed(2).replace(".", ",");
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   const stats = await computeStats(from!, to!);
   const header = ["Instruktor", "Zatrudnienie", "Dni pracy", "Dyżur [h]", "Routesetting [h]", "Sekcje [h]", "Razem [h]", "Sekcje odbyte", "Sekcje zaplanowane", "Sekcje odwołane"];
   const rows = stats.map((s) => [
-    s.name, s.employment === "STALY" ? "stały" : "zlecenie", s.daysWorked, h(s.operatorMin), h(s.routesettingMin), h(s.sectionMin), h(s.totalMin),
+    s.name, EMPLOYMENT_SHORT[s.employment], s.daysWorked, h(s.operatorMin), h(s.routesettingMin), h(s.sectionMin), h(s.totalMin),
     s.sectionsDone, s.sectionsPlanned, s.sectionsCancelled,
   ]);
   // Średnik jako separator i BOM – Excel w polskiej wersji otwiera to poprawnie.

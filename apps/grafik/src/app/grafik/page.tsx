@@ -25,7 +25,7 @@ export default async function GrafikPage({ searchParams }: { searchParams: Promi
     issues[d] = validateDay(
       d,
       shifts.filter((s) => s.date === d).map((s) => ({ ...s, userName: byId.get(s.userId)?.name, employment: byId.get(s.userId)?.employment })),
-      sessions.filter((s) => s.date === d).map((s) => ({ ...s, userName: byId.get(s.userId)?.name })),
+      sessions.filter((s) => s.date === d).map((s) => ({ ...s, userName: byId.get(s.userId)?.name, employment: byId.get(s.userId)?.employment })),
       rules,
     );
   }

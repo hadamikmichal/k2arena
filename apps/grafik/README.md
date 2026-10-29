@@ -43,6 +43,7 @@ Domyślne wartości (edytowalne w Ustawieniach):
 - Min. 4 h pracy instruktora w dniu, w którym pracuje (dyżur + routesetting + sekcje).
 - Maks. instruktorów jednocześnie: pn–śr 3, pozostałe dni 2.
 - Pn–pt instruktorzy stali, sb–nd zleceniobiorcy/studenci (ostrzeżenie przy niezgodności).
+- **Instruktor sekcji** (typ zatrudnienia „Instruktor sekcji”): zleceniobiorca, który prowadzi sekcje w dowolne dni, a dyżur operatora bierze tylko w weekend. Nie robi routesettingu. Gdy przychodzi tylko na sekcje, nie obowiązuje go minimum 4 h. Generator nie da mu dyżuru w dzień roboczy.
 - Kolizje: ta sama osoba na dwóch zmianach naraz, sekcja w trakcie routesettingu.
 
 Naruszenia nie blokują zapisu – pokazują się jako **błędy** (np. brak operatora) lub **ostrzeżenia** w widoku tygodnia.

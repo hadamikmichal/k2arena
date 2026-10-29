@@ -12,6 +12,7 @@ datasource db {
 
 // Role: ADMIN (układa grafik) | INSTRUCTOR (podgląd własnego grafiku)
 // Zatrudnienie: STALY (pn–pt) | ZLECENIE (zleceniobiorcy / studenci, sb–nd)
+//              | SEKCJA (instruktor sekcji: sekcje w dowolne dni, operator tylko sb–nd)
 model User {
   id             String           @id @default(cuid())
   name           String

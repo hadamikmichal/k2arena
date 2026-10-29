@@ -103,3 +103,22 @@ test("godziny rozkładają się w miarę równo między stałych", () => {
   const hours = STAFF.map((u) => r.shifts.filter((s) => s.userId === u.id).reduce((a, s) => a + s.endMin - s.startMin, 0) / 60);
   assert.ok(Math.max(...hours) - Math.min(...hours) <= 16, `rozrzut: ${hours.join(", ")}`);
 });
+
+const SECTION_ONLY = { id: "marcin", name: "Marcin", employment: "SEKCJA" };
+
+test("instruktor sekcji: dyżury tylko w weekend, nigdy routesetting", () => {
+  // Brak innych chętnych w tygodniu – mimo to instruktor sekcji nie dostaje dyżuru w dzień roboczy.
+  const r = generateSchedule(base({ users: [SECTION_ONLY, ...CONTRACT] }));
+  const mine = r.shifts.filter((s) => s.userId === "marcin");
+  assert.ok(mine.length > 0, "powinien dostać dyżury w weekend");
+  for (const s of mine) {
+    assert.equal(s.type, "OPERATOR");
+    assert.ok(["2026-11-07", "2026-11-08"].includes(s.date), s.date);
+  }
+});
+
+test("instruktor sekcji z samą sekcją w dzień roboczy – bez ostrzeżenia o minimum 4 h", () => {
+  const sessions: SessionLike[] = [{ userId: "marcin", date: "2026-11-04", startMin: h(17.5), endMin: h(19), name: "Jaszczurki", status: "PLANNED" }];
+  const r = generateSchedule(base({ dates: ["2026-11-04"], users: [...STAFF, SECTION_ONLY], sessions }));
+  assert.ok(!r.issues["2026-11-04"].some((i) => i.userId === "marcin"), JSON.stringify(r.issues["2026-11-04"]));
+});
