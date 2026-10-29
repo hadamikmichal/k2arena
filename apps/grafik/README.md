@@ -24,7 +24,7 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 
 | Widok | Dla kogo | Co robi |
 |---|---|---|
-| **Grafik** | admin | Tydzień na osi czasu 8:00–22:00, klik w puste pole = nowa zmiana, klik w blok = edycja. Kopiowanie poprzedniego tygodnia. Lista naruszeń reguł i podsumowanie godzin tygodnia. |
+| **Grafik** | admin | Trzy widoki: **dzień** (oś czasu z wierszem na instruktora i paskiem pokrycia dyżuru; klik w oś instruktora = nowa zmiana dla niego), **tydzień** (kolumny dni 8:00–22:00) i **miesiąc** (kalendarz z dyżurami, liczbą sekcji i znacznikami problemów). Klik w blok = edycja. Kopiowanie poprzedniego tygodnia, lista naruszeń reguł i podsumowanie godzin wyświetlanego okresu. Adres: `/grafik?widok=dzien|tydzien|miesiac&data=YYYY-MM-DD`. |
 | **Dyspozycyjność** | instruktor, admin | Instruktor zgłasza dyspozycyjność na miesiąc. Domyślnie każdy dzień to „cały dzień”, a instruktor oznacza dni niedostępne albo godziny. Admin widzi zestawienie wszystkich (kto zgłosił, kto nie) i może wpisać dyspozycyjność za instruktora. |
 | **Generuj grafik** | admin | Automatyczne ułożenie dyżurów i routesettingu na miesiąc na podstawie reguł, dyspozycyjności i sekcji. Tryby: *uzupełnij luki* albo *ułóż od nowa*. Najpierw podgląd z ostrzeżeniami i godzinami na osobę, potem zapis. |
 | **Sekcje** | admin | Sekcje cykliczne (dzień tygodnia, godziny, prowadzący, okres) → automatycznie generowane zajęcia. Pojedyncze zajęcia: zastępstwo, odwołanie, oznaczenie jako odbyte. Zajęcia jednorazowe. |

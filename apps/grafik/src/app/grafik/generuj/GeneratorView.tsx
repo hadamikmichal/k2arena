@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { applyGenerate, previewGenerate, type GeneratePreview } from "../../actions";
-import { dateRange, fmtDayShort, fmtHours, fmtMin, startOfWeek } from "@/lib/time";
+import { dateRange, fmtDayShort, fmtHours, fmtMin } from "@/lib/time";
 
 type UserRow = { id: string; name: string; color: string; employment: string; submitted: boolean };
 
@@ -36,7 +36,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
     start(async () => {
       const r = await applyGenerate(opts);
       if (r?.error) return setSaveMsg(r.error);
-      router.push(`/grafik?tydzien=${startOfWeek(from)}`);
+      router.push(`/grafik?widok=miesiac&data=${from}`);
     });
 
   const issues = preview ? Object.entries(preview.issues).flatMap(([d, list]) => list.map((i) => ({ d, ...i }))) : [];
