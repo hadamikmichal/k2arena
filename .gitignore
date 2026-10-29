@@ -3,3 +3,7 @@ node_modules
 Claude outputs/
 .vercel
 .env*.local
+.env*
+.agents/
+.claude/skills/
+skills-lock.json
