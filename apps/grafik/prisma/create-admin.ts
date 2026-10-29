@@ -13,9 +13,15 @@ if (!email) {
 
 let password = process.env.ADMIN_PASSWORD ?? "";
 if (!password) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  password = await rl.question("Hasło (min. 8 znaków): ");
+  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+  const prompt = "Hasło (min. 8 znaków): ";
+  // Ukrywa wpisywane znaki – w terminalu widać tylko prompt.
+  (rl as unknown as { _writeToOutput: (s: string) => void })._writeToOutput = (s) => {
+    if (s.startsWith(prompt)) process.stdout.write(prompt);
+  };
+  password = await rl.question(prompt);
   rl.close();
+  process.stdout.write("\n");
 }
 if (password.length < 8) {
   console.error("Hasło musi mieć min. 8 znaków");
