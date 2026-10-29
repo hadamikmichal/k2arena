@@ -3,9 +3,10 @@
 // Hasło jest pobierane z ADMIN_PASSWORD albo wpisywane interaktywnie (nie trafia do historii powłoki).
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { createInterface } from "node:readline/promises";
 
-const [email, name = "Administrator"] = process.argv.slice(2);
+// npm gubi cudzysłowy, więc imię i nazwisko składamy z pozostałych argumentów.
+const [email, ...nameParts] = process.argv.slice(2);
+const name = nameParts.join(" ") || "Administrator";
 if (!email) {
   console.error('Użycie: npm run admin:create -- <email> "<Imię Nazwisko>"');
   process.exit(1);
@@ -13,15 +14,7 @@ if (!email) {
 
 let password = process.env.ADMIN_PASSWORD ?? "";
 if (!password) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-  const prompt = "Hasło (min. 8 znaków): ";
-  // Ukrywa wpisywane znaki – w terminalu widać tylko prompt.
-  (rl as unknown as { _writeToOutput: (s: string) => void })._writeToOutput = (s) => {
-    if (s.startsWith(prompt)) process.stdout.write(prompt);
-  };
-  password = await rl.question(prompt);
-  rl.close();
-  process.stdout.write("\n");
+  password = await readHidden("Hasło (min. 8 znaków): ");
 }
 if (password.length < 8) {
   console.error("Hasło musi mieć min. 8 znaków");
@@ -37,3 +30,31 @@ const user = await prisma.user.upsert({
 });
 console.log(`OK – administrator ${user.email}`);
 await prisma.$disconnect();
+
+/** Czyta hasło w trybie raw – wpisywane znaki nie są wyświetlane. */
+function readHidden(prompt: string): Promise<string> {
+  const stdin = process.stdin;
+  if (!stdin.isTTY) throw new Error("Brak terminala – podaj hasło w zmiennej ADMIN_PASSWORD");
+  process.stdout.write(prompt);
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding("utf8");
+  return new Promise((resolve) => {
+    let value = "";
+    const onData = (chunk: string) => {
+      for (const ch of chunk) {
+        if (ch === "\r" || ch === "\n") {
+          stdin.setRawMode(false);
+          stdin.pause();
+          stdin.off("data", onData);
+          process.stdout.write("\n");
+          return resolve(value);
+        }
+        if (ch === "\u0003") process.exit(130); // Ctrl-C
+        if (ch === "\u007f" || ch === "\b") value = value.slice(0, -1);
+        else value += ch;
+      }
+    };
+    stdin.on("data", onData);
+  });
+}
