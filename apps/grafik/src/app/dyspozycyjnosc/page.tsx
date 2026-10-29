@@ -83,7 +83,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
                     {days.map((d) => {
                       const iv = availability[u.id]?.[d]?.[0];
                       return (
-                        <td key={d} className="px-0.5 text-center tabular-nums" title={iv ? `${fmtMin(iv.startMin)}–${fmtMin(iv.endMin)}` : sub ? "niedostępny" : "brak zgłoszenia"}>
+                        <td key={d} className="px-0.5 text-center tabular-nums" title={iv ? `${fmtMin(iv.startMin)}–${fmtMin(iv.endMin)}` : sub ? "niedostępny" : "brak zgłoszenia – domyślnie dostępny cały dzień"}>
                           {iv ? (
                             <span className="block rounded px-0.5 py-1" style={{ background: "var(--ok-bg)", color: "var(--ok)" }}>
                               {iv.startMin / 60 | 0}–{iv.endMin / 60 | 0}
@@ -91,7 +91,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
                           ) : sub ? (
                             <span className="muted">✕</span>
                           ) : (
-                            <span className="muted">·</span>
+                            <span className="muted" aria-label="domyślnie dostępny">·</span>
                           )}
                         </td>
                       );
@@ -102,7 +102,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
             </tbody>
           </table>
           <p className="px-3 py-2 text-xs muted">
-            Zielone = dostępny (godziny), ✕ = niedostępny, · = instruktor jeszcze nie zgłosił dyspozycyjności. Kliknij nazwisko, aby wpisać lub poprawić dyspozycyjność za instruktora.
+            Zielone = dostępny (godziny), ✕ = niedostępny, · = brak zgłoszenia (domyślnie dostępny cały dzień). Kliknij nazwisko, aby wpisać lub poprawić dyspozycyjność za instruktora.
           </p>
         </section>
       )}
@@ -111,7 +111,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
         <section className="card">
           <h2 className="mb-1 font-semibold">{isAdmin ? `Dyspozycyjność: ${editUser.name}` : "Moja dyspozycyjność"}</h2>
           <p className="mb-4 text-sm muted">
-            Zaznacz dni i godziny, w których możesz pracować w tym miesiącu. Dni bez zaznaczenia oznaczają brak dostępności.
+            Domyślnie jesteś dostępny cały dzień. Zaznacz „Nie” w dniach, w których nie możesz pracować, albo „Godziny”, jeśli możesz tylko w części dnia.
             {submittedBy.get(editUser.id) && ` Ostatnia zmiana: ${submittedBy.get(editUser.id)!.submittedAt.toLocaleString("pl-PL")}.`}
           </p>
           <AvailabilityForm
@@ -122,6 +122,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
             fullDay={fullDay(editUser.employment)}
             staffDays={editUser.employment === "STALY" ? rules.staffDays : [1, 2, 3, 4, 5, 6, 7].filter((d) => !rules.staffDays.includes(d))}
             initial={Object.fromEntries(Object.entries(availability[editUser.id] ?? {}).map(([d, list]) => [d, list[0]]))}
+            submitted={submittedBy.has(editUser.id)}
             note={submittedBy.get(editUser.id)?.note ?? ""}
             locked={!isAdmin && month < todayWarsaw().slice(0, 7)}
           />

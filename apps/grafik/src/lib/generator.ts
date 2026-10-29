@@ -25,7 +25,7 @@ export type GenInput = {
   availability: Record<string, Record<string, Interval[]>>;
   /** Kto złożył zgłoszenie na ten miesiąc (brak dnia w zgłoszeniu = niedostępny) */
   submitted: Set<string>;
-  /** Brak zgłoszenia = dostępny w godzinach otwarcia w „swoje” dni (stali pn–pt, zlecenie sb–nd) */
+  /** Brak zgłoszenia = dostępny cały dzień (jak domyślnie w formularzu dyspozycyjności) */
   assumeDefault: boolean;
   includeRoutesetting: boolean;
 };
@@ -62,7 +62,7 @@ export function generateSchedule(input: GenInput): GenResult {
 
     const availability = (u: GenUser): Interval[] => {
       if (input.submitted.has(u.id)) return input.availability[u.id]?.[date] ?? [];
-      if (!input.assumeDefault || (u.employment === "STALY") !== staffDay) return [];
+      if (!input.assumeDefault) return [];
       const start = isRsDay && u.employment === "STALY" ? Math.min(open.startMin, rules.routesettingWindow.startMin) : open.startMin;
       return [{ startMin: start, endMin: open.endMin }];
     };

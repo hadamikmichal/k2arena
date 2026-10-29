@@ -80,8 +80,13 @@ test("dyspozycyjność jest respektowana; brak dnia w zgłoszeniu = niedostępny
   assert.ok(!r.shifts.some((s) => s.userId === "bartek"));
 });
 
+test("brak zgłoszenia = dostępny cały dzień, także poza „swoimi” dniami", () => {
+  const r = generateSchedule(base({ dates: ["2026-11-07"], users: STAFF }));
+  assert.deepEqual(errors(r), []);
+});
+
 test("brak chętnych – luka zgłoszona jako błąd, generator się nie zapętla", () => {
-  const r = generateSchedule(base({ dates: ["2026-11-07"], users: STAFF, assumeDefault: true }));
+  const r = generateSchedule(base({ dates: ["2026-11-07"], users: STAFF, submitted: new Set(STAFF.map((u) => u.id)) }));
   assert.ok(errors(r).some((i) => i.message.startsWith("Brak operatora")));
 });
 

@@ -84,7 +84,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
             </label>
             <label className="flex gap-2">
               <input type="checkbox" checked={assumeDefault} onChange={(e) => { setAssumeDefault(e.target.checked); setPreview(null); }} />
-              <span>Kto nie zgłosił dyspozycyjności, jest dostępny w godzinach otwarcia w swoje dni (stali pn–pt, zleceniobiorcy sb–nd)</span>
+              <span>Kto nie zgłosił dyspozycyjności, jest dostępny cały dzień (domyślne ustawienie dyspozycyjności)</span>
             </label>
           </div>
           <div className="flex gap-2">
@@ -106,7 +106,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
           </ul>
           {notSubmitted.length > 0 && (
             <p className="mt-2 text-xs muted">
-              {assumeDefault ? "Osoby bez zgłoszenia traktuję jako dostępne w swoje dni." : "Osoby bez zgłoszenia nie dostaną dyżurów."}{" "}
+              {assumeDefault ? "Osoby bez zgłoszenia traktuję jako dostępne cały dzień." : "Osoby bez zgłoszenia nie dostaną dyżurów."}{" "}
               <Link className="underline" href={`/dyspozycyjnosc?miesiac=${month}`}>Zobacz zestawienie</Link>
             </p>
           )}

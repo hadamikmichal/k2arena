@@ -25,7 +25,7 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | Widok | Dla kogo | Co robi |
 |---|---|---|
 | **Grafik** | admin | Tydzień na osi czasu 8:00–22:00, klik w puste pole = nowa zmiana, klik w blok = edycja. Kopiowanie poprzedniego tygodnia. Lista naruszeń reguł i podsumowanie godzin tygodnia. |
-| **Dyspozycyjność** | instruktor, admin | Instruktor zaznacza na dany miesiąc dni i godziny, w których może pracować (cały dzień / własne godziny / nie). Admin widzi zestawienie wszystkich (kto zgłosił, kto nie) i może wpisać dyspozycyjność za instruktora. |
+| **Dyspozycyjność** | instruktor, admin | Instruktor zgłasza dyspozycyjność na miesiąc. Domyślnie każdy dzień to „cały dzień”, a instruktor oznacza dni niedostępne albo godziny. Admin widzi zestawienie wszystkich (kto zgłosił, kto nie) i może wpisać dyspozycyjność za instruktora. |
 | **Generuj grafik** | admin | Automatyczne ułożenie dyżurów i routesettingu na miesiąc na podstawie reguł, dyspozycyjności i sekcji. Tryby: *uzupełnij luki* albo *ułóż od nowa*. Najpierw podgląd z ostrzeżeniami i godzinami na osobę, potem zapis. |
 | **Sekcje** | admin | Sekcje cykliczne (dzień tygodnia, godziny, prowadzący, okres) → automatycznie generowane zajęcia. Pojedyncze zajęcia: zastępstwo, odwołanie, oznaczenie jako odbyte. Zajęcia jednorazowe. |
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
@@ -61,7 +61,7 @@ Dla każdego dnia miesiąca:
    Preferowani są stali w dni robocze i zleceniobiorcy w weekend, osoby, które i tak są na miejscu na sekcji, oraz osoby z mniejszą liczbą godzin w miesiącu. Dyżur ma docelową długość z Ustawień (6 h); końcówka dnia krótsza niż minimum dokleja się do ostatniego dyżuru (maks. 9 h).
 3. Wynik jest walidowany tymi samymi regułami co ręczny grafik; luki, których nie da się obsadzić, są pokazane w podglądzie.
 
-**Brak zgłoszenia dyspozycyjności:** opcja w generatorze. Domyślnie taka osoba jest traktowana jako dostępna w godzinach otwarcia w swoje dni (stali pn–pt, zleceniobiorcy sb–nd). Po wyłączeniu opcji nie dostaje dyżurów.
+**Dyspozycyjność domyślnie = dostępny cały dzień.** Instruktor oznacza tylko dni, w które nie może pracować, albo podaje godziny. Kto nie złożył zgłoszenia, jest w generatorze traktowany jako dostępny cały dzień (można to wyłączyć opcją w generatorze). Stali i tak dostają dyżury głównie pn–pt, a zleceniobiorcy w weekendy, bo to preferuje ranking kandydatów.
 
 ## Google Calendar
 

@@ -17,6 +17,8 @@ export function AvailabilityForm(props: {
   /** Dni tygodnia „typowe” dla tej osoby (stali pn–pt, zlecenie sb–nd) – do szybkiego zaznaczania */
   staffDays: number[];
   initial: Record<string, Interval>;
+  /** Czy osoba złożyła już zgłoszenie – bez niego wszystkie dni startują jako „Cały dzień” */
+  submitted: boolean;
   note: string;
   locked: boolean;
 }) {
@@ -30,7 +32,7 @@ export function AvailabilityForm(props: {
       days.map((d) => {
         const iv = props.initial[d];
         const full = fullDay[d];
-        if (!iv) return [d, { mode: "off", start: fmtMin(full.startMin), end: fmtMin(full.endMin) }];
+        if (!iv) return [d, { mode: props.submitted ? "off" : "full", start: fmtMin(full.startMin), end: fmtMin(full.endMin) }];
         const isFull = iv.startMin === full.startMin && iv.endMin === full.endMin;
         return [d, { mode: isFull ? "full" : "custom", start: fmtMin(iv.startMin), end: fmtMin(iv.endMin) }];
       }),
@@ -40,7 +42,7 @@ export function AvailabilityForm(props: {
   const set = (d: string, patch: Partial<Day>) => setState((s) => ({ ...s, [d]: { ...s[d], ...patch } }));
   const bulk = (pred: (d: string) => boolean, mode: Mode) =>
     setState((s) => Object.fromEntries(days.map((d) => [d, pred(d) ? { ...s[d], mode } : s[d]])));
-  const count = days.filter((d) => state[d].mode !== "off").length;
+  const off = days.filter((d) => state[d].mode === "off").length;
 
   function submit() {
     const payload = days
@@ -61,11 +63,15 @@ export function AvailabilityForm(props: {
     <div className="space-y-4">
       {!props.locked && (
         <div className="flex flex-wrap gap-2 text-sm">
-          <button type="button" className="btn" onClick={() => bulk((d) => props.staffDays.includes(isoWeekday(d)), "full")}>
-            Moje dni – cały dzień
+          <button type="button" className="btn" onClick={() => bulk(() => true, "full")}>Cały miesiąc dostępny</button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setState((s) => Object.fromEntries(days.map((d) => [d, { ...s[d], mode: props.staffDays.includes(isoWeekday(d)) ? "full" : "off" }])))}
+          >
+            Tylko moje dni ({props.staffDays.length === 5 ? "pn–pt" : "sb–nd"})
           </button>
-          <button type="button" className="btn" onClick={() => bulk(() => true, "full")}>Wszystkie dni</button>
-          <button type="button" className="btn" onClick={() => bulk(() => true, "off")}>Wyczyść</button>
+          <button type="button" className="btn" onClick={() => bulk(() => true, "off")}>Cały miesiąc niedostępny</button>
         </div>
       )}
 
@@ -125,7 +131,7 @@ export function AvailabilityForm(props: {
         <p className="text-sm muted">Miniony miesiąc – zmiany może wprowadzić tylko administrator.</p>
       ) : (
         <button type="button" className="btn btn-primary" disabled={pending} onClick={submit}>
-          {pending ? "Zapisywanie…" : `Zapisz dyspozycyjność (${count} dni)`}
+          {pending ? "Zapisywanie…" : `Zapisz dyspozycyjność${off ? ` (dni niedostępne: ${off})` : ""}`}
         </button>
       )}
     </div>
