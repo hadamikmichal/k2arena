@@ -46,6 +46,24 @@ export function RulesForm({ rules }: { rules: Rules }) {
           <input type="number" min={1} name="minOperators" defaultValue={rules.minOperators} className="input" />
         </div>
       </div>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold">Generator grafiku</h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label className="label">Docelowa długość dyżuru (h)</label>
+            <input type="number" step={0.5} min={1} name="shiftTargetHours" defaultValue={rules.shiftTargetMin / 60} className="input" />
+          </div>
+          <div>
+            <label className="label">Maks. długość dyżuru (h)</label>
+            <input type="number" step={0.5} min={1} name="shiftMaxHours" defaultValue={rules.shiftMaxMin / 60} className="input" />
+          </div>
+          <div>
+            <label className="label">Długość routesettingu (h)</label>
+            <input type="number" step={0.5} min={0.5} name="rsLenHours" defaultValue={rules.routesettingLenMin / 60} className="input" />
+          </div>
+        </div>
+        <p className="mt-1 text-xs muted">Generator dzieli dzień na dyżury o docelowej długości; ostatni dyżur może zostać wydłużony do maksymalnej, żeby nie zostawić końcówki krótszej niż minimum godzin.</p>
+      </div>
       {state?.error && <p className="alert-error">{state.error}</p>}
       {state?.message && <p className="alert-ok">{state.message}</p>}
       <button className="btn btn-primary" disabled={pending}>{pending ? "Zapisywanie…" : "Zapisz reguły"}</button>

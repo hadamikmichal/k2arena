@@ -112,6 +112,7 @@ export function WeekBoard(props: {
         <Link className="btn" href="/grafik">Dziś</Link>
         <Link className="btn" href={`/grafik?tydzien=${props.nextWeek}`} aria-label="Następny tydzień">→</Link>
         <div className="ml-auto flex flex-wrap gap-2">
+          <Link className="btn" href={`/grafik/generuj?miesiac=${days[3].slice(0, 7)}`}>Generuj miesiąc</Link>
           <button className="btn" onClick={() => setModal({ type: "copy" })}>Kopiuj poprzedni tydzień</button>
           <button className="btn" onClick={() => setModal({ type: "session", defaults: { date: days[0] } })}>+ Zajęcia sekcji</button>
           <button className="btn btn-primary" onClick={() => setModal({ type: "shift", defaults: { date: days[0] } })}>+ Zmiana</button>

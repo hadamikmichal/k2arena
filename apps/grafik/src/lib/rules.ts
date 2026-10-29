@@ -17,6 +17,10 @@ export type Rules = {
   minOperators: number;
   /** Dni dla instruktorów stałych (1 = pn); w pozostałe – zleceniobiorcy */
   staffDays: number[];
+  /** Generator: docelowa i maksymalna długość dyżuru, długość bloku routesettingu (minuty) */
+  shiftTargetMin: number;
+  shiftMaxMin: number;
+  routesettingLenMin: number;
 };
 
 const WEEKDAY_OPEN = { startMin: 10 * 60, endMin: 22 * 60 };
@@ -30,6 +34,9 @@ export const DEFAULT_RULES: Rules = {
   maxConcurrent: [3, 3, 3, 2, 2, 2, 2],
   minOperators: 1,
   staffDays: [1, 2, 3, 4, 5],
+  shiftTargetMin: 6 * 60,
+  shiftMaxMin: 9 * 60,
+  routesettingLenMin: 4 * 60,
 };
 
 export type ShiftLike = Interval & {
@@ -60,7 +67,7 @@ export type Issue = {
   gap?: Interval;
 };
 
-const overlaps = (a: Interval, b: Interval) => a.startMin < b.endMin && b.startMin < a.endMin;
+export const overlaps = (a: Interval, b: Interval) => a.startMin < b.endMin && b.startMin < a.endMin;
 
 /** Odejmuje przedziały `cut` od przedziału `base`. */
 export function subtract(base: Interval, cut: Interval[]): Interval[] {

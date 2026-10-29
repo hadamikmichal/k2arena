@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 const ADMIN_NAV = [
   { href: "/grafik", label: "Grafik" },
   { href: "/sekcje", label: "Sekcje" },
+  { href: "/dyspozycyjnosc", label: "Dyspozycyjność" },
   { href: "/instruktorzy", label: "Instruktorzy" },
   { href: "/statystyki", label: "Statystyki" },
   { href: "/ustawienia", label: "Ustawienia" },
@@ -19,7 +20,7 @@ const ADMIN_NAV = [
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const nav = session?.role === "ADMIN" ? ADMIN_NAV : [{ href: "/moj-grafik", label: "Mój grafik" }];
+  const nav = session?.role === "ADMIN" ? ADMIN_NAV : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }];
   return (
     <html lang="pl">
       <body className="min-h-screen">

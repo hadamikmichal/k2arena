@@ -26,6 +26,8 @@ model User {
   shifts         Shift[]
   sectionSeries  SectionSeries[]
   sectionSessions SectionSession[]
+  availability   Availability[]
+  availabilitySubmissions AvailabilitySubmission[]
 }
 
 // Zmiana w grafiku. Typ: OPERATOR (dyżur operatora ściany) | ROUTESETTING
@@ -88,4 +90,30 @@ model SectionSession {
 model Setting {
   key   String @id
   value String
+}
+
+// Dyspozycyjność: przedziały, w których instruktor może pracować danego dnia.
+// Brak wiersza dla dnia przy złożonym zgłoszeniu = niedostępny.
+model Availability {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     String
+  startMin Int
+  endMin   Int
+
+  @@index([date])
+  @@index([userId, date])
+}
+
+// Zgłoszenie dyspozycyjności na miesiąc ("YYYY-MM") – odróżnia "nie zgłosił" od "niedostępny".
+model AvailabilitySubmission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       String
+  note        String?
+  submittedAt DateTime @default(now())
+
+  @@unique([userId, month])
 }

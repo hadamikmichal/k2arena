@@ -25,6 +25,8 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | Widok | Dla kogo | Co robi |
 |---|---|---|
 | **Grafik** | admin | Tydzień na osi czasu 8:00–22:00, klik w puste pole = nowa zmiana, klik w blok = edycja. Kopiowanie poprzedniego tygodnia. Lista naruszeń reguł i podsumowanie godzin tygodnia. |
+| **Dyspozycyjność** | instruktor, admin | Instruktor zaznacza na dany miesiąc dni i godziny, w których może pracować (cały dzień / własne godziny / nie). Admin widzi zestawienie wszystkich (kto zgłosił, kto nie) i może wpisać dyspozycyjność za instruktora. |
+| **Generuj grafik** | admin | Automatyczne ułożenie dyżurów i routesettingu na miesiąc na podstawie reguł, dyspozycyjności i sekcji. Tryby: *uzupełnij luki* albo *ułóż od nowa*. Najpierw podgląd z ostrzeżeniami i godzinami na osobę, potem zapis. |
 | **Sekcje** | admin | Sekcje cykliczne (dzień tygodnia, godziny, prowadzący, okres) → automatycznie generowane zajęcia. Pojedyncze zajęcia: zastępstwo, odwołanie, oznaczenie jako odbyte. Zajęcia jednorazowe. |
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
 | **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV (Excel). |
@@ -45,6 +47,21 @@ Domyślne wartości (edytowalne w Ustawieniach):
 
 Naruszenia nie blokują zapisu – pokazują się jako **błędy** (np. brak operatora) lub **ostrzeżenia** w widoku tygodnia.
 Testy: `npm test`.
+
+## Generator grafiku (`src/lib/generator.ts`)
+
+Dla każdego dnia miesiąca:
+
+1. **Routesetting** (dni z Ustawień, domyślnie pn–śr): jeden instruktor stały od początku okna (8:00) przez ustawioną liczbę godzin.
+2. **Dyżur operatora:** algorytm bierze najwcześniejszy moment bez operatora i wybiera instruktora, który:
+   - jest wtedy dostępny (dyspozycyjność),
+   - nie przekroczy limitu osób naraz,
+   - nie prowadzi w tym czasie sekcji (prowadzący nie liczy się jako operator).
+
+   Preferowani są stali w dni robocze i zleceniobiorcy w weekend, osoby, które i tak są na miejscu na sekcji, oraz osoby z mniejszą liczbą godzin w miesiącu. Dyżur ma docelową długość z Ustawień (6 h); końcówka dnia krótsza niż minimum dokleja się do ostatniego dyżuru (maks. 9 h).
+3. Wynik jest walidowany tymi samymi regułami co ręczny grafik; luki, których nie da się obsadzić, są pokazane w podglądzie.
+
+**Brak zgłoszenia dyspozycyjności:** opcja w generatorze. Domyślnie taka osoba jest traktowana jako dostępna w godzinach otwarcia w swoje dni (stali pn–pt, zleceniobiorcy sb–nd). Po wyłączeniu opcji nie dostaje dyżurów.
 
 ## Google Calendar
 

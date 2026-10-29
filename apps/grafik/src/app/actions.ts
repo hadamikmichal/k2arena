@@ -11,7 +11,8 @@ import { requireAdmin, requireUser } from "@/lib/auth";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
 import { getRules, saveRules } from "@/lib/settings";
 import { deleteGoogleEvent, syncRange, syncSession, syncShift } from "@/lib/google";
-import { addDays, dateRange, isoWeekday, toMin, todayWarsaw } from "@/lib/time";
+import { addDays, dateRange, isoWeekday, monthBounds, toMin, todayWarsaw } from "@/lib/time";
+import { runGenerator } from "@/lib/planning";
 import type { Rules } from "@/lib/rules";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
@@ -26,7 +27,7 @@ function fail(err: unknown): FormState {
 }
 
 function revalidateAll() {
-  for (const p of ["/grafik", "/sekcje", "/statystyki", "/moj-grafik", "/instruktorzy"]) revalidatePath(p);
+  for (const p of ["/grafik", "/sekcje", "/statystyki", "/moj-grafik", "/instruktorzy", "/dyspozycyjnosc", "/grafik/generuj"]) revalidatePath(p);
 }
 
 // ---------- Logowanie ----------
@@ -307,6 +308,9 @@ export async function saveRulesAction(_: FormState, fd: FormData): Promise<FormS
       maxConcurrent: Array.from({ length: 7 }, (_, i) => z.coerce.number().int().min(1).parse(fd.get(`max${i}`))),
       minDailyMin: Math.round(z.coerce.number().min(0).parse(fd.get("minDailyHours")) * 60),
       minOperators: z.coerce.number().int().min(1).parse(fd.get("minOperators")),
+      shiftTargetMin: Math.round(z.coerce.number().min(1).parse(fd.get("shiftTargetHours")) * 60),
+      shiftMaxMin: Math.round(z.coerce.number().min(1).parse(fd.get("shiftMaxHours")) * 60),
+      routesettingLenMin: Math.round(z.coerce.number().min(0.5).parse(fd.get("rsLenHours")) * 60),
     };
     await saveRules(rules);
     revalidateAll();
@@ -323,6 +327,100 @@ export async function syncGoogleAction(_: FormState, fd: FormData): Promise<Form
     const to = date.parse(fd.get("to"));
     const r = await syncRange(from, to);
     return { ok: r.errors === 0, message: `Zsynchronizowano ${r.count - r.errors} z ${r.count} wydarzeń`, error: r.errors ? `${r.errors} błędów – szczegóły w logach serwera` : undefined };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------- Dyspozycyjność ----------
+
+const availabilitySchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  userId: z.string().optional(),
+  note: z.string().max(500).optional(),
+  days: z.array(z.object({ date, startMin: z.number().int().min(0).max(1440), endMin: z.number().int().min(0).max(1440) })),
+});
+
+/** Zapisuje zgłoszenie dyspozycyjności na cały miesiąc (zastępuje poprzednie). */
+export async function saveAvailability(input: z.infer<typeof availabilitySchema>): Promise<FormState> {
+  const session = await requireUser();
+  try {
+    const v = availabilitySchema.parse(input);
+    // Instruktor zgłasza za siebie; administrator może wpisać za dowolnego instruktora.
+    const userId = session.role === "ADMIN" && v.userId ? v.userId : session.sub;
+    if (session.role !== "ADMIN" && v.month < todayWarsaw().slice(0, 7)) return { error: "Nie można zmieniać dyspozycyjności za miniony miesiąc" };
+    const bad = v.days.find((d) => !d.date.startsWith(v.month) || d.endMin <= d.startMin);
+    if (bad) return { error: `Nieprawidłowe godziny w dniu ${bad.date}` };
+    const { from, to } = monthBounds(v.month);
+    await prisma.$transaction([
+      prisma.availability.deleteMany({ where: { userId, date: { gte: from, lte: to } } }),
+      prisma.availability.createMany({ data: v.days.map((d) => ({ userId, ...d })) }),
+      prisma.availabilitySubmission.upsert({
+        where: { userId_month: { userId, month: v.month } },
+        create: { userId, month: v.month, note: v.note || null },
+        update: { note: v.note || null, submittedAt: new Date() },
+      }),
+    ]);
+    revalidatePath("/dyspozycyjnosc");
+    return { ok: true, message: `Zapisano dyspozycyjność: ${v.days.length} dni` };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+// ---------- Generator grafiku ----------
+
+const generateSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  from: date,
+  mode: z.enum(["fill", "replace"]),
+  assumeDefault: z.boolean(),
+  includeRoutesetting: z.boolean(),
+});
+
+export type GeneratePreview = {
+  error?: string;
+  shifts: { userId: string; userName: string; date: string; startMin: number; endMin: number; type: string }[];
+  issues: Record<string, { level: string; message: string }[]>;
+  replaced: number;
+};
+
+export async function previewGenerate(input: z.infer<typeof generateSchema>): Promise<GeneratePreview> {
+  await requireAdmin();
+  try {
+    const opts = generateSchema.parse(input);
+    if (!opts.from.startsWith(opts.month)) return { error: "Data początkowa musi być w wybranym miesiącu", shifts: [], issues: {}, replaced: 0 };
+    const r = await runGenerator(opts);
+    return {
+      shifts: r.shifts.map((s) => ({ userId: s.userId, userName: s.userName ?? "", date: s.date, startMin: s.startMin, endMin: s.endMin, type: s.type })),
+      issues: Object.fromEntries(Object.entries(r.issues).map(([d, list]) => [d, list.map((i) => ({ level: i.level, message: i.message }))])),
+      replaced: r.replaced,
+    };
+  } catch (err) {
+    return { error: fail(err)?.error, shifts: [], issues: {}, replaced: 0 };
+  }
+}
+
+/** Zapisuje wygenerowany grafik. Wynik liczony od nowa na serwerze – ten sam algorytm co w podglądzie. */
+export async function applyGenerate(input: z.infer<typeof generateSchema>): Promise<FormState> {
+  await requireAdmin();
+  try {
+    const opts = generateSchema.parse(input);
+    const r = await runGenerator(opts);
+    const { to } = monthBounds(opts.month);
+    if (opts.mode === "replace") {
+      const old = await prisma.shift.findMany({ where: { date: { gte: opts.from, lte: to } } });
+      await prisma.shift.deleteMany({ where: { id: { in: old.map((s) => s.id) } } });
+      for (const s of old) await deleteGoogleEvent(s.googleEventId);
+    }
+    for (const s of r.shifts) {
+      const created = await prisma.shift.create({
+        data: { userId: s.userId, date: s.date, startMin: s.startMin, endMin: s.endMin, type: s.type },
+      });
+      await syncShift(created.id);
+    }
+    revalidateAll();
+    return { ok: true, message: `Zapisano ${r.shifts.length} zmian${r.replaced ? `, usunięto ${r.replaced} poprzednich` : ""}` };
   } catch (err) {
     return fail(err);
   }
