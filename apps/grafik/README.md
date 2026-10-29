@@ -43,6 +43,7 @@ Domyślne wartości (edytowalne w Ustawieniach):
 - Min. 4 h pracy instruktora w dniu, w którym pracuje (dyżur + routesetting + sekcje).
 - Maks. instruktorów jednocześnie: pn–śr 3, pozostałe dni 2.
 - Pn–pt instruktorzy stali, sb–nd zleceniobiorcy/studenci (ostrzeżenie przy niezgodności).
+- **Instruktor UoP** (umowa o pracę): pracuje jak stały (pn–pt, może robić routesetting), ale ma miesięczną normę godzin (domyślnie min. 160 h, do zmiany w Ustawieniach). Do normy liczy się cały czas pracy: dyżury, routesetting i sekcje, bez podwójnego liczenia. Norma jest pokazywana w widoku miesiąca grafiku, w statystykach (dla pełnego miesiąca), w „Moim grafiku” i w podglądzie generatora. Generator daje instruktorom UoP dłuższe dyżury (domyślnie 8 h). Jeśli po obsadzeniu dyżurów nadal brakuje im do normy, wydłuża ich zmiany albo dokłada nowe w dni robocze, w ramach dostępności i limitu osób naraz.
 - **Instruktor sekcji** (typ zatrudnienia „Instruktor sekcji”): zleceniobiorca, który prowadzi sekcje w dowolne dni, a dyżur operatora bierze tylko w weekend. Nie robi routesettingu. Gdy przychodzi tylko na sekcje, nie obowiązuje go minimum 4 h. Generator nie da mu dyżuru w dzień roboczy.
 - Kolizje: ta sama osoba na dwóch zmianach naraz, sekcja w trakcie routesettingu.
 

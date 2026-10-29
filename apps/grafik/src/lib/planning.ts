@@ -30,15 +30,18 @@ export async function loadAvailability(month: string) {
 }
 
 export async function runGenerator(opts: GenerateOptions): Promise<GenResult & { replaced: number }> {
-  const { to } = monthBounds(opts.month);
+  const { from: monthStart, to } = monthBounds(opts.month);
   const dates = dateRange(opts.from, to);
   const range = { gte: opts.from, lte: to };
-  const [rules, users, sessions, existing, { availability, submissions }] = await Promise.all([
+  const before = { gte: monthStart, lt: opts.from };
+  const [rules, users, sessions, existing, { availability, submissions }, priorShifts, priorSessions] = await Promise.all([
     getRules(),
     prisma.user.findMany({ where: { role: "INSTRUCTOR", active: true }, orderBy: { name: "asc" } }),
     prisma.sectionSession.findMany({ where: { date: range } }),
     prisma.shift.findMany({ where: { date: range } }),
     loadAvailability(opts.month),
+    prisma.shift.findMany({ where: { date: before } }),
+    prisma.sectionSession.findMany({ where: { date: before } }),
   ]);
   const result = generateSchedule({
     dates,
@@ -46,6 +49,7 @@ export async function runGenerator(opts: GenerateOptions): Promise<GenResult & {
     users: users.map((u) => ({ id: u.id, name: u.name, employment: u.employment })),
     sessions,
     existing: opts.mode === "fill" ? existing : [],
+    prior: [...priorShifts, ...priorSessions],
     availability,
     submitted: new Set(submissions.map((s) => s.userId)),
     assumeDefault: opts.assumeDefault,

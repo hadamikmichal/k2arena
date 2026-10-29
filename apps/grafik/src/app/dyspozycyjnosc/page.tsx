@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { getRules } from "@/lib/settings";
 import { loadAvailability } from "@/lib/planning";
 import { dateRange, fmtMin, isoWeekday, monthBounds, todayWarsaw, WEEKDAYS } from "@/lib/time";
+import { isStaff } from "@/lib/employment";
 import { AvailabilityForm } from "./AvailabilityForm";
 
 const isMonth = (s?: string) => !!s && /^\d{4}-\d{2}$/.test(s);
@@ -38,7 +39,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
       days.map((d) => {
         const wd = isoWeekday(d);
         const open = rules.opening[wd - 1];
-        const start = employment === "STALY" && rules.routesettingDays.includes(wd) ? Math.min(open.startMin, rules.routesettingWindow.startMin) : open.startMin;
+        const start = isStaff(employment) && rules.routesettingDays.includes(wd) ? Math.min(open.startMin, rules.routesettingWindow.startMin) : open.startMin;
         return [d, { startMin: start, endMin: open.endMin }];
       }),
     );
@@ -120,7 +121,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
             userId={isAdmin ? editUser.id : undefined}
             days={days}
             fullDay={fullDay(editUser.employment)}
-            staffDays={editUser.employment === "STALY" ? rules.staffDays : [1, 2, 3, 4, 5, 6, 7].filter((d) => !rules.staffDays.includes(d))}
+            staffDays={isStaff(editUser.employment) ? rules.staffDays : [1, 2, 3, 4, 5, 6, 7].filter((d) => !rules.staffDays.includes(d))}
             initial={Object.fromEntries(Object.entries(availability[editUser.id] ?? {}).map(([d, list]) => [d, list[0]]))}
             submitted={submittedBy.has(editUser.id)}
             note={submittedBy.get(editUser.id)?.note ?? ""}

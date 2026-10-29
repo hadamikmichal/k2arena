@@ -5,6 +5,7 @@ import { SHIFT_LABEL } from "@/lib/calendar";
 import { addDays, fmtDayShort, fmtHours, fmtMin, monthBounds, todayWarsaw } from "@/lib/time";
 import { CopyButton } from "@/components/CopyButton";
 import { AccountForms } from "./AccountForms";
+import { getRules } from "@/lib/settings";
 
 export default async function MojGrafikPage() {
   const session = await requireUser();
@@ -24,6 +25,7 @@ export default async function MojGrafikPage() {
 
   const month = monthBounds(today.slice(0, 7));
   const [stats] = user.role === "INSTRUCTOR" ? await computeStats(month.from, month.to, user.id) : [];
+  const rules = await getRules();
   const icalUrl = `${process.env.APP_URL ?? "http://localhost:3010"}/api/ical/${user.icalToken}`;
 
   return (
@@ -62,6 +64,18 @@ export default async function MojGrafikPage() {
               <dt className="text-2">Sekcje</dt><dd className="text-right tabular-nums">{stats.sectionsDone + stats.sectionsPlanned} ({fmtHours(stats.sectionMin)})</dd>
               <dt className="font-semibold">Razem</dt><dd className="text-right font-semibold tabular-nums">{fmtHours(stats.totalMin)}</dd>
             </dl>
+            {user.employment === "UOP" && (
+              <div className="mt-3 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-2">Norma UoP</span>
+                  <span className="tabular-nums">{fmtHours(stats.totalMin)} / {fmtHours(rules.uopMonthlyMinMin)}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-2)" }} role="progressbar" aria-valuenow={Math.round(stats.totalMin / 60)} aria-valuemax={rules.uopMonthlyMinMin / 60} aria-label="Postęp normy godzin">
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (stats.totalMin / rules.uopMonthlyMinMin) * 100)}%`, background: stats.totalMin >= rules.uopMonthlyMinMin ? "var(--ok)" : "var(--series-op)" }} />
+                </div>
+                <p className="text-xs muted">Grafik na cały miesiąc (zaplanowane + przepracowane).</p>
+              </div>
+            )}
           </section>
         )}
         <section className="card space-y-2">

@@ -9,6 +9,7 @@ import { ShiftForm } from "@/components/ShiftForm";
 import { SessionForm } from "@/components/SessionForm";
 import type { SessionDTO, ShiftDTO, UserOpt } from "@/components/types";
 import type { Interval, Issue } from "@/lib/rules";
+import { normMessage, type NormStatus } from "@/lib/norm";
 import { addDays, fmtDate, fmtDayShort, fmtHours, isoWeekday, isoWeekNumber, WEEKDAYS_LONG } from "@/lib/time";
 import type { BoardData } from "./board";
 import { DayTimeline } from "./DayTimeline";
@@ -35,6 +36,7 @@ export function ScheduleBoard(props: {
   sessions: SessionDTO[];
   issues: Record<string, Issue[]>;
   opening: Interval[];
+  norm: NormStatus[];
 }) {
   const { view, anchor, days, focus, users, shifts, sessions, issues, today } = props;
   const router = useRouter();
@@ -53,8 +55,10 @@ export function ScheduleBoard(props: {
 
   const focusSet = new Set(focus);
   const allIssues = focus.flatMap((d) => issues[d] ?? []);
+  const normIssues = props.norm.filter((n) => n.missingMin > 0);
   const errors = allIssues.filter((i) => i.level === "error").length;
-  const warnings = allIssues.length - errors;
+  const warnings = allIssues.length - errors + normIssues.length;
+  const normById = new Map(props.norm.map((n) => [n.userId, n]));
 
   // Podsumowanie wyświetlanego okresu per instruktor
   const summary = users
@@ -146,7 +150,13 @@ export function ScheduleBoard(props: {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card">
           <h2 className="mb-3 font-semibold">Uwagi do grafiku</h2>
+          {normIssues.length > 0 && (
+            <ul className="mb-1.5 space-y-1.5 text-sm">
+              {normIssues.map((n) => <li key={n.userId} className="alert-warn">{normMessage(n)}</li>)}
+            </ul>
+          )}
           {allIssues.length === 0 ? (
+            normIssues.length === 0 &&
             <p className="text-sm muted">Brak – dyżur pokryty w godzinach otwarcia, limity zachowane.</p>
           ) : (
             <ul className="max-h-96 space-y-1.5 overflow-y-auto text-sm">
@@ -170,7 +180,7 @@ export function ScheduleBoard(props: {
           ) : (
             <table className="table">
               <thead>
-                <tr><th>Instruktor</th><th className="text-right">Dyżur</th><th className="text-right">Routesetting</th><th className="text-right">Sekcje</th></tr>
+                <tr><th>Instruktor</th><th className="text-right">Dyżur</th><th className="text-right">Routesetting</th><th className="text-right">Sekcje</th>{props.norm.length > 0 && <th className="text-right">Norma UoP</th>}</tr>
               </thead>
               <tbody>
                 {summary.map((w) => (
@@ -179,6 +189,15 @@ export function ScheduleBoard(props: {
                     <td className="text-right tabular-nums">{fmtHours(w.op)}</td>
                     <td className="text-right tabular-nums">{fmtHours(w.rs)}</td>
                     <td className="text-right tabular-nums">{w.sec}</td>
+                    {props.norm.length > 0 && (
+                      <td className="text-right tabular-nums">
+                        {normById.has(w.u.id) ? (
+                          <span style={{ color: normById.get(w.u.id)!.missingMin ? "var(--warn)" : "var(--ok)" }}>
+                            {fmtHours(normById.get(w.u.id)!.workedMin)} / {fmtHours(normById.get(w.u.id)!.targetMin)}
+                          </span>
+                        ) : <span className="muted">—</span>}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

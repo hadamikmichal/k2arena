@@ -133,8 +133,19 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
               </button>
             </div>
             {saveMsg && <p className="alert-error">{saveMsg}</p>}
+            {preview.norm.length > 0 && (
+              <div className="space-y-1 text-sm">
+                {preview.norm.map((n) => (
+                  <p key={n.userId} className={n.missingMin ? "alert-warn" : "alert-ok"}>
+                    {n.missingMin ? "!" : "✓"} {n.name} (UoP): {fmtHours(n.workedMin)} w miesiącu – norma {fmtHours(n.targetMin)}
+                    {n.missingMin > 0 && `, brakuje ${fmtHours(n.missingMin)} (za mało dostępności albo limit osób naraz)`}
+                  </p>
+                ))}
+              </div>
+            )}
             {hours.length > 0 && (
               <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                <span className="text-2">Godziny nowych zmian:</span>
                 {hours.map(({ u, min }) => (
                   <span key={u.id} className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ background: u.color }} />

@@ -312,6 +312,8 @@ export async function saveRulesAction(_: FormState, fd: FormData): Promise<FormS
       shiftTargetMin: Math.round(z.coerce.number().min(1).parse(fd.get("shiftTargetHours")) * 60),
       shiftMaxMin: Math.round(z.coerce.number().min(1).parse(fd.get("shiftMaxHours")) * 60),
       routesettingLenMin: Math.round(z.coerce.number().min(0.5).parse(fd.get("rsLenHours")) * 60),
+      uopMonthlyMinMin: Math.round(z.coerce.number().min(0).parse(fd.get("uopMonthlyHours")) * 60),
+      uopShiftMin: Math.round(z.coerce.number().min(1).parse(fd.get("uopShiftHours")) * 60),
     };
     await saveRules(rules);
     revalidateAll();
@@ -383,6 +385,7 @@ export type GeneratePreview = {
   error?: string;
   shifts: { userId: string; userName: string; date: string; startMin: number; endMin: number; type: string }[];
   issues: Record<string, { level: string; message: string }[]>;
+  norm: { userId: string; name: string; workedMin: number; targetMin: number; missingMin: number }[];
   replaced: number;
 };
 
@@ -390,15 +393,16 @@ export async function previewGenerate(input: z.infer<typeof generateSchema>): Pr
   await requireAdmin();
   try {
     const opts = generateSchema.parse(input);
-    if (!opts.from.startsWith(opts.month)) return { error: "Data początkowa musi być w wybranym miesiącu", shifts: [], issues: {}, replaced: 0 };
+    if (!opts.from.startsWith(opts.month)) return { error: "Data początkowa musi być w wybranym miesiącu", shifts: [], issues: {}, norm: [], replaced: 0 };
     const r = await runGenerator(opts);
     return {
       shifts: r.shifts.map((s) => ({ userId: s.userId, userName: s.userName ?? "", date: s.date, startMin: s.startMin, endMin: s.endMin, type: s.type })),
       issues: Object.fromEntries(Object.entries(r.issues).map(([d, list]) => [d, list.map((i) => ({ level: i.level, message: i.message }))])),
+      norm: r.norm,
       replaced: r.replaced,
     };
   } catch (err) {
-    return { error: fail(err)?.error, shifts: [], issues: {}, replaced: 0 };
+    return { error: fail(err)?.error, shifts: [], issues: {}, norm: [], replaced: 0 };
   }
 }
 

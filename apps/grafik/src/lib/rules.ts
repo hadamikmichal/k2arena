@@ -1,5 +1,6 @@
 // Silnik reguł grafiku – czyste funkcje bez dostępu do bazy (łatwe do testowania).
 import { fmtMin, isoWeekday, WEEKDAYS_LONG } from "./time.ts";
+import { isStaff } from "./employment.ts";
 
 export type Interval = { startMin: number; endMin: number };
 
@@ -21,6 +22,9 @@ export type Rules = {
   shiftTargetMin: number;
   shiftMaxMin: number;
   routesettingLenMin: number;
+  /** Instruktor UoP: minimalna liczba godzin w miesiącu i długość jego dyżuru w generatorze (minuty) */
+  uopMonthlyMinMin: number;
+  uopShiftMin: number;
 };
 
 const WEEKDAY_OPEN = { startMin: 10 * 60, endMin: 22 * 60 };
@@ -37,6 +41,8 @@ export const DEFAULT_RULES: Rules = {
   shiftTargetMin: 6 * 60,
   shiftMaxMin: 9 * 60,
   routesettingLenMin: 4 * 60,
+  uopMonthlyMinMin: 160 * 60,
+  uopShiftMin: 8 * 60,
 };
 
 export type ShiftLike = Interval & {
@@ -187,10 +193,10 @@ export function validateDay(
       }
     } else if (s.employment) {
       const staffDay = rules.staffDays.includes(wd);
-      if (staffDay && s.employment !== "STALY") {
+      if (staffDay && !isStaff(s.employment)) {
         issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: zleceniobiorca w dzień roboczy (dni stałych instruktorów)` });
       }
-      if (!staffDay && s.employment === "STALY") {
+      if (!staffDay && isStaff(s.employment)) {
         issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: instruktor stały w weekend` });
       }
     }

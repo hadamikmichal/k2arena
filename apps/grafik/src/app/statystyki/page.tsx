@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { computeStats } from "@/lib/stats";
 import { fmtDate, fmtHours, monthBounds, todayWarsaw } from "@/lib/time";
 import { HoursChart } from "@/components/HoursChart";
+import { getRules } from "@/lib/settings";
 import { EMPLOYMENT_SHORT } from "@/lib/employment";
 
 const isDate = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -19,7 +20,9 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
   const month = sp.miesiac && /^\d{4}-\d{2}$/.test(sp.miesiac) ? sp.miesiac : todayWarsaw().slice(0, 7);
   const custom = isDate(sp.od) && isDate(sp.do);
   const { from, to } = custom ? { from: sp.od!, to: sp.do! } : monthBounds(month);
-  const stats = await computeStats(from, to);
+  const [stats, rules] = await Promise.all([computeStats(from, to), getRules()]);
+  // Norma UoP ma sens tylko dla pełnego miesiąca kalendarzowego
+  const fullMonth = from.slice(0, 7) === to.slice(0, 7) && from === monthBounds(from.slice(0, 7)).from && to === monthBounds(from.slice(0, 7)).to;
   const sum = (k: "operatorMin" | "routesettingMin" | "sectionMin" | "totalMin" | "sectionsDone" | "sectionsPlanned" | "sectionsCancelled" | "daysWorked") =>
     stats.reduce((a, s) => a + s[k], 0);
   const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(new Date(`${month}-15`));
@@ -75,6 +78,7 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
               <th className="text-right">Routesetting</th>
               <th className="text-right">Sekcje (h)</th>
               <th className="text-right">Razem*</th>
+              {fullMonth && <th className="text-right">Norma UoP</th>}
               <th className="text-right">Sekcje odbyte</th>
               <th className="text-right">Zaplanowane</th>
               <th className="text-right">Odwołane</th>
@@ -94,6 +98,15 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
                 <td className="text-right tabular-nums">{fmtHours(s.routesettingMin)}</td>
                 <td className="text-right tabular-nums">{fmtHours(s.sectionMin)}</td>
                 <td className="text-right font-semibold tabular-nums">{fmtHours(s.totalMin)}</td>
+                {fullMonth && (
+                  <td className="text-right tabular-nums">
+                    {s.employment === "UOP" ? (
+                      <span style={{ color: s.totalMin < rules.uopMonthlyMinMin ? "var(--warn)" : "var(--ok)" }} title={s.totalMin < rules.uopMonthlyMinMin ? `brakuje ${fmtHours(rules.uopMonthlyMinMin - s.totalMin)}` : "norma wyrobiona"}>
+                        {s.totalMin < rules.uopMonthlyMinMin ? "! " : "✓ "}{fmtHours(rules.uopMonthlyMinMin)}
+                      </span>
+                    ) : <span className="muted">—</span>}
+                  </td>
+                )}
                 <td className="text-right tabular-nums">{s.sectionsDone}</td>
                 <td className="text-right tabular-nums">{s.sectionsPlanned}</td>
                 <td className="text-right tabular-nums">{s.sectionsCancelled}</td>

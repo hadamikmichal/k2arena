@@ -122,3 +122,37 @@ test("instruktor sekcji z samą sekcją w dzień roboczy – bez ostrzeżenia o 
   const r = generateSchedule(base({ dates: ["2026-11-04"], users: [...STAFF, SECTION_ONLY], sessions }));
   assert.ok(!r.issues["2026-11-04"].some((i) => i.userId === "marcin"), JSON.stringify(r.issues["2026-11-04"]));
 });
+
+const UOP = [
+  { id: "anna", name: "Anna", employment: "UOP" },
+  { id: "bartek", name: "Bartek", employment: "UOP" },
+  { id: "kasia", name: "Kasia", employment: "STALY" },
+];
+const NOVEMBER = dateRange("2026-11-01", "2026-11-30");
+
+test("UoP: generator dopełnia normę 160 h w miesiącu", () => {
+  const r = generateSchedule(base({ dates: NOVEMBER, users: [...UOP, ...CONTRACT] }));
+  assert.deepEqual(errors(r), []);
+  for (const n of r.norm) assert.ok(n.workedMin >= 160 * 60, `${n.name}: ${n.workedMin / 60} h`);
+  // dyżury UoP mieszczą się w dniach roboczych i nie łamią limitu osób naraz
+  for (const s of r.shifts.filter((x) => x.employment === "UOP")) assert.ok(!["6", "0"].includes(String(new Date(s.date).getUTCDay())), s.date);
+  assert.deepEqual(Object.values(r.issues).flat().filter((i) => i.message.includes("jednocześnie")), []);
+});
+
+test("UoP: norma liczy pracę sprzed dnia startu generatora", () => {
+  const prior = dateRange("2026-11-02", "2026-11-13")
+    .filter((d) => ![6, 0].includes(new Date(d).getUTCDay()))
+    .map((date) => ({ userId: "anna", date, startMin: h(10), endMin: h(18), type: "OPERATOR" }));
+  const r = generateSchedule(base({ dates: dateRange("2026-11-14", "2026-11-30"), users: [...UOP, ...CONTRACT], prior }));
+  const anna = r.norm.find((n) => n.userId === "anna")!;
+  assert.ok(anna.workedMin >= 160 * 60);
+  // 80 h przed startem → generator nie powinien jej dokładać dużo ponad normę
+  assert.ok(anna.workedMin <= 160 * 60 + 8 * 60 * 2, `${anna.workedMin / 60} h`);
+});
+
+test("UoP: brak dyspozycyjności – norma niedopełniona i zgłoszona", () => {
+  const r = generateSchedule(base({ dates: NOVEMBER, users: [...UOP, ...CONTRACT], submitted: new Set(["anna"]) }));
+  const anna = r.norm.find((n) => n.userId === "anna")!;
+  assert.equal(anna.workedMin, 0);
+  assert.equal(anna.missingMin, 160 * 60);
+});

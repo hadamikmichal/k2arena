@@ -62,7 +62,17 @@ export function RulesForm({ rules }: { rules: Rules }) {
             <input type="number" step={0.5} min={0.5} name="rsLenHours" defaultValue={rules.routesettingLenMin / 60} className="input" />
           </div>
         </div>
-        <p className="mt-1 text-xs muted">Generator dzieli dzień na dyżury o docelowej długości; ostatni dyżur może zostać wydłużony do maksymalnej, żeby nie zostawić końcówki krótszej niż minimum godzin.</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div>
+            <label className="label">Norma UoP – min. godzin w miesiącu</label>
+            <input type="number" step={1} min={0} name="uopMonthlyHours" defaultValue={rules.uopMonthlyMinMin / 60} className="input" />
+          </div>
+          <div>
+            <label className="label">Długość dyżuru UoP (h)</label>
+            <input type="number" step={0.5} min={1} name="uopShiftHours" defaultValue={rules.uopShiftMin / 60} className="input" />
+          </div>
+        </div>
+        <p className="mt-1 text-xs muted">Generator dzieli dzień na dyżury o docelowej długości; ostatni dyżur może zostać wydłużony do maksymalnej, żeby nie zostawić końcówki krótszej niż minimum godzin. Instruktorzy UoP dostają dłuższe dyżury, a jeśli po obsadzeniu dyżurów brakuje im do normy, generator dokłada im dodatkowe zmiany w dni robocze (w ramach dostępności i limitu osób naraz).</p>
       </div>
       {state?.error && <p className="alert-error">{state.error}</p>}
       {state?.message && <p className="alert-ok">{state.message}</p>}

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getRules } from "@/lib/settings";
 import { validateDay, type Issue } from "@/lib/rules";
 import { addDays, dateRange, monthBounds, startOfWeek, todayWarsaw, weekDates } from "@/lib/time";
+import { normStatus } from "@/lib/norm";
 import { ScheduleBoard, type View } from "./ScheduleBoard";
 
 const isDate = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -61,8 +62,13 @@ export default async function GrafikPage({ searchParams }: { searchParams: Promi
     );
   }
 
+  // Norma UoP – tylko w widoku miesiąca (dane obejmują cały miesiąc)
+  const inFocus = (x: { date: string }) => focus.includes(x.date);
+  const norm = view === "month" ? normStatus(users, [...shifts.filter(inFocus), ...sessions.filter(inFocus)], rules) : [];
+
   return (
     <ScheduleBoard
+      norm={norm}
       view={view}
       anchor={anchor}
       days={days}
