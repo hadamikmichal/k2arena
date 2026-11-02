@@ -2,18 +2,26 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Paleta zgodna z k2arena.pl: bursztyn K2 (#f6b533), grafitowy tusz (#17181c), ciepłe szarości. */
 :root {
-  --bg: #f6f6f4;
+  --bg: #f9f9f7;
   --surface: #ffffff;
-  --surface-2: #f0efec;
-  --border: #e2e1dc;
-  --text: #121212;
-  --text-2: #52514e;
-  --muted: #8a8984;
-  --accent: #e2001a; /* czerwień K2 */
-  --accent-ink: #ffffff;
+  --surface-2: #f4f2ee;
+  --border: #e6e3dd;
+  --text: #17181c;
+  --text-2: #5b5f55;
+  --muted: #8a8b84;
+  --ink: #17181c; /* przyciski „ghost”, aktywne przełączniki */
+  --ink-text: #ffffff;
+  --accent: #f6b533; /* bursztyn K2 */
+  --accent-hover: #f7a400;
+  --accent-ink: #17181c; /* tekst na bursztynie – czytelniejszy niż biały */
+  --accent-text: #8a6a14; /* bursztyn jako kolor tekstu na jasnym tle */
+  --accent-soft: #fdf6e4;
+  --shadow: 0 12px 24px rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 2px 6px rgb(0 0 0 / 0.06);
   --series-op: #2a78d6;
-  --series-rs: #eb6834;
+  --series-rs: #c2410c;
   --series-sec: #1baf7a;
   --err: #c62828;
   --err-bg: #fdecec;
@@ -25,16 +33,24 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121211;
-    --surface: #1a1a19;
-    --surface-2: #232321;
-    --border: #33332f;
+    --bg: #121315;
+    --surface: #1a1b1e;
+    --surface-2: #24252a;
+    --border: #33343a;
     --text: #f0efec;
     --text-2: #c3c2b7;
     --muted: #8f8e86;
-    --accent: #ff3347;
+    --ink: #f0efec;
+    --ink-text: #17181c;
+    --accent: #f6b533;
+    --accent-hover: #ffc54d;
+    --accent-ink: #17181c;
+    --accent-text: #f6b533;
+    --accent-soft: #2e2615;
+    --shadow: 0 12px 24px rgb(0 0 0 / 0.35);
+    --shadow-sm: 0 2px 6px rgb(0 0 0 / 0.3);
     --series-op: #3987e5;
-    --series-rs: #d95926;
+    --series-rs: #e2622d;
     --series-sec: #199e70;
     --err: #ff8a80;
     --err-bg: #3a1615;
@@ -45,29 +61,63 @@
   }
 }
 
+@theme {
+  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+::selection { background: var(--accent); color: var(--accent-ink); }
+
 @layer components {
-  .card { @apply rounded-xl border p-4; background: var(--surface); border-color: var(--border); }
-  .btn { @apply inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer; background: var(--surface); border-color: var(--border); color: var(--text); }
-  .btn:hover { background: var(--surface-2); }
+  .page-title { @apply text-2xl font-extrabold leading-tight; letter-spacing: -0.02em; }
+  .section-title { @apply font-bold; letter-spacing: -0.01em; }
+  .eyebrow { @apply text-xs font-semibold uppercase; letter-spacing: 0.08em; color: var(--text-2); }
+  .card { @apply rounded-xl border p-4; background: var(--surface); border-color: var(--border); box-shadow: var(--shadow); }
+  .btn { @apply inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer; background: var(--surface); border-color: var(--border); color: var(--text); }
+  .btn:hover { border-color: var(--ink); }
+  .btn:focus-visible, .seg a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .btn-primary:hover { background: var(--accent); filter: brightness(1.08); }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-ghost { background: transparent; border-width: 2px; border-color: var(--ink); color: var(--ink); }
+  .btn-ghost:hover { background: var(--ink); color: var(--ink-text); }
   .btn-danger { color: var(--err); }
+  .btn-danger:hover { border-color: var(--err); }
+  /* przełącznik segmentowy (widok dzień/tydzień/miesiąc itp.) */
+  .seg { @apply inline-flex rounded-lg border p-0.5 text-sm; background: var(--surface); border-color: var(--border); }
+  .seg > * { @apply rounded-md px-3 py-1 font-semibold transition-colors; color: var(--text-2); }
+  .seg > *:hover { color: var(--text); }
+  .seg > [aria-selected="true"] { background: var(--ink); color: var(--ink-text); }
   .input { @apply w-full rounded-lg border px-2.5 py-1.5 text-sm; background: var(--surface); border-color: var(--border); color: var(--text); }
-  .input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .label { @apply mb-1 block text-xs font-medium; color: var(--text-2); }
+  .input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .label { @apply mb-1 block text-xs font-semibold; color: var(--text-2); }
   .muted { color: var(--muted); }
   .text-2 { color: var(--text-2); }
   .table { @apply w-full text-sm; }
-  .table th { @apply px-3 py-2 text-left text-xs font-medium; color: var(--text-2); border-bottom: 1px solid var(--border); }
+  .table th { @apply px-3 py-2 text-left text-xs font-semibold uppercase; letter-spacing: 0.06em; color: var(--text-2); border-bottom: 1px solid var(--border); }
   .table td { @apply px-3 py-2; border-bottom: 1px solid var(--border); }
-  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; background: var(--surface-2); color: var(--text-2); }
+  .table tbody tr:hover td { background: var(--surface-2); }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold; background: var(--surface-2); color: var(--text-2); }
+  .badge-accent { background: var(--accent-soft); color: var(--accent-text); }
+  .note { @apply rounded-lg px-3 py-2 text-sm; background: var(--accent-soft); border-left: 4px solid var(--accent); }
   .alert-error { @apply rounded-lg px-3 py-2 text-sm; background: var(--err-bg); color: var(--err); }
   .alert-warn { @apply rounded-lg px-3 py-2 text-sm; background: var(--warn-bg); color: var(--warn); }
   .alert-ok { @apply rounded-lg px-3 py-2 text-sm; background: var(--ok-bg); color: var(--ok); }
+  /* link nawigacji z bursztynowym podkreśleniem jak na k2arena.pl */
+  .nav-link { @apply relative px-1 py-1.5 text-sm font-semibold transition-colors; color: var(--text-2); }
+  .nav-link::after { content: ""; position: absolute; left: 0; bottom: -2px; height: 2px; width: 0; background: var(--accent); transition: width 300ms ease; }
+  .nav-link:hover { color: var(--text); }
+  .nav-link:hover::after, .nav-link[aria-current="page"]::after { width: 100%; }
+  .nav-link[aria-current="page"] { color: var(--text); }
+}
+
+/* Logo ma nieprzezroczyste białe tło: w jasnym trybie wtapiamy je w tło, w ciemnym pokazujemy na jasnej plakietce. */
+.brand-logo { mix-blend-mode: multiply; }
+@media (prefers-color-scheme: dark) {
+  .brand-logo { mix-blend-mode: normal; background: #fff; padding: 3px 6px; border-radius: 6px; box-sizing: content-box; }
 }

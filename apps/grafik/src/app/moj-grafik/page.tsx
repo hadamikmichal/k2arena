@@ -31,7 +31,7 @@ export default async function MojGrafikPage() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
       <section className="space-y-3">
-        <h1 className="text-xl font-semibold">{user.role === "ADMIN" ? "Konto" : "Mój grafik – najbliższe 4 tygodnie"}</h1>
+        <h1 className="page-title">{user.role === "ADMIN" ? "Konto" : "Mój grafik – najbliższe 4 tygodnie"}</h1>
         {user.role === "INSTRUCTOR" && byDate.size === 0 && <p className="card text-sm muted">Brak zaplanowanej pracy.</p>}
         {[...byDate].map(([date, list]) => (
           <div key={date} className="card">
@@ -56,7 +56,7 @@ export default async function MojGrafikPage() {
       <aside className="space-y-4">
         {stats && (
           <section className="card">
-            <h2 className="mb-3 font-semibold">Ten miesiąc</h2>
+            <h2 className="mb-3 section-title">Ten miesiąc</h2>
             <dl className="grid grid-cols-2 gap-y-2 text-sm">
               <dt className="text-2">Dni pracy</dt><dd className="text-right tabular-nums">{stats.daysWorked}</dd>
               <dt className="text-2">Dyżur</dt><dd className="text-right tabular-nums">{fmtHours(stats.operatorMin)}</dd>
@@ -80,7 +80,7 @@ export default async function MojGrafikPage() {
           </section>
         )}
         <section className="card space-y-2">
-          <h2 className="font-semibold">Google Calendar</h2>
+          <h2 className="section-title">Google Calendar</h2>
           <p className="text-sm text-2">
             {user.role === "ADMIN" ? "Ten link zawiera cały grafik." : "Twój osobisty grafik jako kalendarz."} W Google Calendar: <em>Inne kalendarze → + → Z adresu URL</em> i wklej link. Google odświeża go co kilka godzin.
           </p>

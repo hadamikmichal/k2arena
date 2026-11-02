@@ -23,7 +23,7 @@ export function InstructorsView({ users, selfId, appUrl }: { users: UserRow[]; s
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <h1 className="text-xl font-semibold">Instruktorzy</h1>
+        <h1 className="page-title">Instruktorzy</h1>
         <button className="btn btn-primary ml-auto" onClick={() => setModal({})}>+ Dodaj osobę</button>
       </div>
       <div className="card overflow-x-auto p-0">

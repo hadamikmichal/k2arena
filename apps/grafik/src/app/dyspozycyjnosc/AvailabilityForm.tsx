@@ -81,7 +81,7 @@ export function AvailabilityForm(props: {
           const weekend = isoWeekday(d) >= 6;
           return (
             <div key={d} className="flex flex-wrap items-center gap-2 border-b py-1.5" style={{ borderColor: "var(--border)" }}>
-              <span className="w-20 text-sm font-medium" style={{ color: weekend ? "var(--accent)" : undefined }}>{fmtDayShort(d)}</span>
+              <span className="w-20 text-sm font-medium" style={{ color: weekend ? "var(--accent-text)" : undefined }}>{fmtDayShort(d)}</span>
               <div className="inline-flex overflow-hidden rounded-lg border text-xs" style={{ borderColor: "var(--border)" }} role="radiogroup" aria-label={`Dostępność ${fmtDayShort(d)}`}>
                 {(
                   [

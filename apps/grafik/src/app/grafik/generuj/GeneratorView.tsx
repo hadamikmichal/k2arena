@@ -51,7 +51,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold">Generuj grafik – <span className="capitalize">{monthName}</span></h1>
+        <h1 className="page-title">Generuj grafik – <span className="capitalize">{monthName}</span></h1>
         <form className="ml-auto flex items-center gap-2" action="/grafik/generuj">
           <input type="month" name="miesiac" defaultValue={month} className="input w-40" aria-label="Miesiąc" />
           <button className="btn">Zmień</button>
@@ -92,7 +92,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
           </div>
         </div>
         <aside className="text-sm">
-          <h2 className="mb-2 font-semibold">Dyspozycyjność na ten miesiąc</h2>
+          <h2 className="mb-2 section-title">Dyspozycyjność na ten miesiąc</h2>
           <ul className="space-y-1">
             {users.map((u) => (
               <li key={u.id} className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
         <>
           <section className="card space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="font-semibold">Podgląd</h2>
+              <h2 className="section-title">Podgląd</h2>
               <span className="text-sm text-2">
                 {preview.shifts.length} nowych zmian{preview.replaced ? `, zastąpi ${preview.replaced} istniejących` : ""}
               </span>

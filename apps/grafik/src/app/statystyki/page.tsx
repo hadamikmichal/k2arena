@@ -30,7 +30,7 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-xl font-semibold">Statystyki</h1>
+        <h1 className="mr-2 page-title">Statystyki</h1>
         {!custom && (
           <>
             <Link className="btn" href={`/statystyki?miesiac=${shiftMonth(month, -1)}`} aria-label="Poprzedni miesiąc">←</Link>
@@ -61,7 +61,7 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
       </div>
 
       <section className="card">
-        <h2 className="mb-1 font-semibold">Godziny wg instruktora</h2>
+        <h2 className="mb-1 section-title">Godziny wg instruktora</h2>
         <p className="mb-4 text-sm muted">Podział na rodzaj pracy w okresie {fmtDate(from)} – {fmtDate(to)}. Sekcja prowadzona w trakcie dyżuru liczy się w obu kategoriach.</p>
         <HoursChart
           rows={stats.map((s) => ({ name: s.name, color: s.color, operatorMin: s.operatorMin, routesettingMin: s.routesettingMin, sectionMin: s.sectionMin }))}

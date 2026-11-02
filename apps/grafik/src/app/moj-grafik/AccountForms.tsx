@@ -11,7 +11,7 @@ export function AccountForms({ userId }: { userId: string }) {
   return (
     <>
       <section className="card">
-        <h2 className="mb-2 font-semibold">Zmiana hasła</h2>
+        <h2 className="mb-2 section-title">Zmiana hasła</h2>
         <form action={action} className="space-y-2">
           <input name="current" type="password" placeholder="Obecne hasło" autoComplete="current-password" className="input" required />
           <input name="next" type="password" placeholder="Nowe hasło (min. 8 znaków)" autoComplete="new-password" minLength={8} className="input" required />

@@ -49,7 +49,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-xl font-semibold">Dyspozycyjność</h1>
+        <h1 className="mr-2 page-title">Dyspozycyjność</h1>
         <Link className="btn" href={q(shiftMonth(month, -1), sp.osoba)} aria-label="Poprzedni miesiąc">←</Link>
         <span className="min-w-36 text-center font-medium capitalize">{monthName}</span>
         <Link className="btn" href={q(shiftMonth(month, 1), sp.osoba)} aria-label="Następny miesiąc">→</Link>
@@ -65,7 +65,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
               <tr>
                 <th className="sticky left-0 z-10" style={{ background: "var(--surface)" }}>Instruktor</th>
                 {days.map((d) => (
-                  <th key={d} className="px-1 text-center" style={{ color: isoWeekday(d) >= 6 ? "var(--accent)" : undefined }}>
+                  <th key={d} className="px-1 text-center" style={{ color: isoWeekday(d) >= 6 ? "var(--accent-text)" : undefined }}>
                     {WEEKDAYS[isoWeekday(d) - 1]}<br />{d.slice(8)}
                   </th>
                 ))}
@@ -116,7 +116,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
         </section>
       ) : editUser ? (
         <section className="card">
-          <h2 className="mb-1 font-semibold">{isAdmin ? `Dyspozycyjność: ${editUser.name}` : "Moja dyspozycyjność"}</h2>
+          <h2 className="mb-1 section-title">{isAdmin ? `Dyspozycyjność: ${editUser.name}` : "Moja dyspozycyjność"}</h2>
           <p className="mb-4 text-sm muted">
             Domyślnie jesteś dostępny cały dzień. Zaznacz „Nie” w dniach, w których nie możesz pracować, albo „Godziny”, jeśli możesz tylko w części dnia.
             {submittedBy.get(editUser.id) && ` Ostatnia zmiana: ${submittedBy.get(editUser.id)!.submittedAt.toLocaleString("pl-PL")}.`}
