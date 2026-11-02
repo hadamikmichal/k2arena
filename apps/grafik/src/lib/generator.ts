@@ -175,7 +175,9 @@ export function generateSchedule(input: GenInput): GenResult {
         const score =
           gain +
           (fitsDay(u.employment, d.staffDay) ? 240 : -240) +
-          (d.daySessions.some((s) => s.userId === u.id) ? 120 : 0) -
+          (d.daySessions.some((s) => s.userId === u.id) ? 120 : 0) +
+          // i tak przychodzi na sekcje, a bez dyżuru nie dobiłby do minimum godzin
+          (d.daySessions.some((s) => s.userId === u.id) && d.dayWork(u.id) < rules.minDailyMin ? 300 : 0) -
           (d.dayShifts.some((s) => s.userId === u.id) ? 200 : 0) +
           (behindNorm(u, date) ? 150 : 0) -
           fairness(u.id);
@@ -235,6 +237,33 @@ export function generateSchedule(input: GenInput): GenResult {
           d.add(u, iv, "OPERATOR");
           break;
         }
+      }
+    }
+  }
+
+  // ---------- Faza 2c: minimum godzin dla osób, które przychodzą tylko na sekcje ----------
+  // Np. stały prowadzi sekcje 17–18:30 i 19–21 bez dyżuru → dyżur 17–21 obejmujący zajęcia (4 h).
+  for (const date of input.dates) {
+    const d = day(date);
+    for (const u of users) {
+      if (!canTakeShift(u.employment, "OPERATOR", d.staffDay) || !fitsDay(u.employment, d.staffDay)) continue;
+      const mine = [...d.dayShifts, ...d.daySessions].filter((x) => x.userId === u.id);
+      const worked0 = d.dayWork(u.id);
+      if (!mine.length || worked0 >= rules.minDailyMin || d.dayShifts.some((s) => s.userId === u.id)) continue;
+      const span = { startMin: Math.min(...mine.map((x) => x.startMin)), endMin: Math.max(...mine.map((x) => x.endMin)) };
+      const tries: Interval[] = [];
+      for (let extra = 0; extra <= rules.minDailyMin; extra += 30) {
+        tries.push({ startMin: span.startMin, endMin: Math.min(d.open.endMin, span.endMin + extra) });
+        tries.push({ startMin: Math.max(d.open.startMin, span.startMin - extra), endMin: span.endMin });
+      }
+      const avail = d.availability(u);
+      for (const iv of tries) {
+        const added = d.dayWork(u.id, iv) - worked0;
+        if (d.dayWork(u.id, iv) < rules.minDailyMin || added > roomLeft(u)) continue;
+        if (!avail.some((a) => a.startMin <= iv.startMin && a.endMin >= iv.endMin)) continue;
+        if (d.fitEnd(u.id, iv.startMin, iv.endMin) !== iv.endMin) continue;
+        d.add(u, iv, "OPERATOR");
+        break;
       }
     }
   }
