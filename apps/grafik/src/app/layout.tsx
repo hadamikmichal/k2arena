@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Source_Sans_3 } from "next/font/google";
 import { getSession } from "@/lib/auth";
 import { logout } from "./actions";
+import { NavLinks } from "@/components/NavLinks";
 import "./globals.css";
+
+const sourceSans = Source_Sans_3({ subsets: ["latin", "latin-ext"], variable: "--font-source-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Grafik instruktorów – K2 Arena",
@@ -20,35 +24,31 @@ const ADMIN_NAV = [
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const nav = session?.role === "ADMIN" ? ADMIN_NAV : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }];
+  const nav = session?.role === "ADMIN"
+    ? [...ADMIN_NAV, { href: "/moj-grafik", label: "Konto" }]
+    : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }];
   return (
-    <html lang="pl">
+    <html lang="pl" className={sourceSans.variable}>
       <body className="min-h-screen">
         {session && (
-          <header className="sticky top-0 z-30 border-b" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
-              <Link href="/" className="flex items-center gap-2 font-semibold">
-                <span className="grid h-7 w-7 place-items-center rounded-md text-xs font-bold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>K2</span>
-                Grafik
+          <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", borderColor: "var(--border)" }}>
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
+              <Link href="/" className="flex items-center gap-3" aria-label="K2 Arena – grafik, strona główna">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/k2-arena-logo.png" alt="K2 Arena" width={120} height={25} className="brand-logo h-[25px] w-auto" />
+                <span className="eyebrow border-l pl-3" style={{ borderColor: "var(--border)" }}>Grafik</span>
               </Link>
-              <nav className="flex flex-wrap gap-1 text-sm">
-                {nav.map((n) => (
-                  <Link key={n.href} href={n.href} className="rounded-md px-2.5 py-1 hover:bg-[var(--surface-2)]">
-                    {n.label}
-                  </Link>
-                ))}
-                {session.role === "ADMIN" && (
-                  <Link href="/moj-grafik" className="rounded-md px-2.5 py-1 hover:bg-[var(--surface-2)]">Konto</Link>
-                )}
-              </nav>
+              <div className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 md:order-none md:mx-0 md:w-auto md:overflow-visible md:px-0">
+                <NavLinks items={nav} />
+              </div>
               <form action={logout} className="ml-auto flex items-center gap-3 text-sm">
-                <span className="text-2">{session.name}</span>
+                <span className="hidden font-semibold sm:inline">{session.name}</span>
                 <button className="btn">Wyloguj</button>
               </form>
             </div>
           </header>
         )}
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">{children}</main>
       </body>
     </html>
   );

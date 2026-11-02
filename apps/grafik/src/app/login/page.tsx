@@ -2,12 +2,13 @@ import { LoginForm } from "./LoginForm";
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto mt-16 max-w-sm">
-      <div className="mb-6 flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-lg font-bold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>K2</span>
+    <div className="mx-auto mt-12 max-w-sm sm:mt-20">
+      <div className="mb-8 flex flex-col items-center gap-4 text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/k2-arena-logo.png" alt="K2 Arena" width={192} height={40} className="brand-logo h-10 w-auto" />
         <div>
-          <h1 className="text-lg font-semibold">K2 Arena</h1>
-          <p className="text-sm muted">Grafik instruktorów</p>
+          <p className="eyebrow">Strefa instruktora</p>
+          <h1 className="page-title mt-1">Grafik pracy</h1>
         </div>
       </div>
       <LoginForm />

@@ -12,5 +12,5 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   // Publiczne: logowanie, feed iCal (chroniony tokenem w URL), zasoby statyczne.
-  matcher: ["/((?!login|api/ical|_next|favicon.ico).*)"],
+  matcher: ["/((?!login|api/ical|_next|favicon.ico|icon.png|k2-arena-logo.png).*)"],
 };

@@ -29,7 +29,7 @@ export function SectionsView({ today, users, series, upcoming }: { today: string
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold">Sekcje wspinaczkowe</h1>
+        <h1 className="page-title">Sekcje wspinaczkowe</h1>
         <div className="ml-auto flex gap-2">
           <button className="btn" onClick={() => setModal({ type: "session", session: undefined })}>+ Zajęcia jednorazowe</button>
           <button className="btn btn-primary" onClick={() => setModal({ type: "series" })}>+ Nowa sekcja</button>
@@ -77,7 +77,7 @@ export function SectionsView({ today, users, series, upcoming }: { today: string
       </section>
 
       <section>
-        <h2 className="mb-2 font-semibold">Najbliższe 4 tygodnie</h2>
+        <h2 className="mb-2 section-title">Najbliższe 4 tygodnie</h2>
         <p className="mb-3 text-sm muted">Kliknij zajęcia, aby wpisać zastępstwo, odwołać lub oznaczyć jako odbyte.</p>
         <div className="card overflow-x-auto p-0">
           <table className="table min-w-[640px]">

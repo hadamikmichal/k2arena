@@ -12,12 +12,12 @@ export default async function UstawieniaPage() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
       <section className="card">
-        <h1 className="mb-1 text-xl font-semibold">Reguły grafiku</h1>
+        <h1 className="mb-1 page-title">Reguły grafiku</h1>
         <p className="mb-4 text-sm muted">Grafik nie blokuje zapisu – naruszenia reguł pokazują się jako błędy/ostrzeżenia w widoku tygodnia.</p>
         <RulesForm rules={rules} />
       </section>
       <section className="card h-fit space-y-3">
-        <h2 className="font-semibold">Google Calendar – synchronizacja API</h2>
+        <h2 className="section-title">Google Calendar – synchronizacja API</h2>
         {google.enabled ? (
           <>
             <p className="alert-ok">Połączono z kalendarzem <code className="break-all">{google.calendarId}</code>. Każda zmiana w grafiku jest od razu zapisywana w Google.</p>
