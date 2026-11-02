@@ -253,7 +253,10 @@ export function validateDay(
 
   // Limit jednocześnie pracujących instruktorów.
   const max = rules.maxConcurrent[wd - 1];
-  const perUser = [...byUser.values()].flatMap((e) => merge([...e.shifts, ...e.sessions]));
+  // Osoby „tylko sekcje” nie zajmują miejsca w limicie instruktorów naraz.
+  const perUser = [...byUser.values()]
+    .filter((e) => !(e.shifts.length === 0 && e.sessions.every((x) => leadsSectionsOnly(x.employment))))
+    .flatMap((e) => merge([...e.shifts, ...e.sessions]));
   const peak = peakConcurrency(perUser);
   if (peak.count > max) {
     issues.push({

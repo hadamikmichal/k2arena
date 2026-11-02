@@ -80,3 +80,10 @@ test("„tylko sekcje” na dyżurze – ostrzeżenie", () => {
   const issues = validateDay(SAT, [op("K", 9, 21, { date: SAT, employment: "TYLKO_SEKCJE" })], []);
   assert.ok(issues.some((i) => i.message.includes("prowadzi tylko sekcje")));
 });
+
+test("osoby „tylko sekcje” nie liczą się do limitu instruktorów naraz", () => {
+  const thu = "2026-10-29";
+  const shifts = [op("A", 10, 22, { date: thu }), op("B", 14, 20, { date: thu })];
+  const sessions = [sec("K", 16, 18, { date: thu, employment: "TYLKO_SEKCJE" }), sec("M", 16, 18, { date: thu, employment: "TYLKO_SEKCJE" })];
+  assert.ok(!validateDay(thu, shifts, sessions).some((i) => i.message.includes("jednocześnie")));
+});

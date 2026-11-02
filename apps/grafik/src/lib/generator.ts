@@ -14,7 +14,7 @@
 // Faza 3 – walidacja każdego dnia i stan normy UoP.
 import { merge, validateDay, type Interval, type Issue, type Rules, type SessionLike, type ShiftLike } from "./rules.ts";
 import { fmtMin, isoWeekday, monthBounds } from "./time.ts";
-import { canTakeShift, fitsDay, isStaff } from "./employment.ts";
+import { canTakeShift, fitsDay, isStaff, takesShifts } from "./employment.ts";
 import { normStatus, workedMinutes, type NormStatus } from "./norm.ts";
 
 const SLOT = 15;
@@ -96,7 +96,9 @@ export function generateSchedule(input: GenInput): GenResult {
       return [{ startMin: start, endMin: open.endMin }];
     };
     const inSection = (uid: string, t: number) => daySessions.some((s) => s.userId === uid && covers(s, t));
-    const working = (t: number) => new Set([...dayShifts, ...daySessions].filter((x) => covers(x, t)).map((x) => x.userId));
+    // Kto jest na ścianie (do limitu osób naraz) – bez osób „tylko sekcje”.
+    const working = (t: number) =>
+      new Set([...dayShifts, ...daySessions].filter((x) => covers(x, t) && takesShifts(byId.get(x.userId)?.employment ?? "")).map((x) => x.userId));
     const cover = (t: number) => dayShifts.filter((s) => s.type === "OPERATOR" && covers(s, t) && !inSection(s.userId, t)).length;
     const ownShiftAt = (uid: string, t: number) => dayShifts.some((s) => s.userId === uid && covers(s, t));
     /** Przycina koniec przedziału do pierwszego momentu, w którym osoba kolidowałaby z limitem lub własną zmianą. */
