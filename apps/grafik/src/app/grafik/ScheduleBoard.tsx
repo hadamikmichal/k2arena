@@ -55,7 +55,7 @@ export function ScheduleBoard(props: {
 
   const focusSet = new Set(focus);
   const allIssues = focus.flatMap((d) => issues[d] ?? []);
-  const normIssues = props.norm.filter((n) => n.missingMin > 0);
+  const normIssues = props.norm.filter((n) => n.missingMin > 0 || n.overMin > 0);
   const errors = allIssues.filter((i) => i.level === "error").length;
   const warnings = allIssues.length - errors + normIssues.length;
   const normById = new Map(props.norm.map((n) => [n.userId, n]));
@@ -192,7 +192,7 @@ export function ScheduleBoard(props: {
                     {props.norm.length > 0 && (
                       <td className="text-right tabular-nums">
                         {normById.has(w.u.id) ? (
-                          <span style={{ color: normById.get(w.u.id)!.missingMin ? "var(--warn)" : "var(--ok)" }}>
+                          <span style={{ color: normById.get(w.u.id)!.missingMin || normById.get(w.u.id)!.overMin ? "var(--warn)" : "var(--ok)" }}>
                             {fmtHours(normById.get(w.u.id)!.workedMin)} / {fmtHours(normById.get(w.u.id)!.targetMin)}
                           </span>
                         ) : <span className="muted">—</span>}

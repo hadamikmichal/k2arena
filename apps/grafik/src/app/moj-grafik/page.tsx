@@ -71,8 +71,9 @@ export default async function MojGrafikPage() {
                   <span className="tabular-nums">{fmtHours(stats.totalMin)} / {fmtHours(rules.uopMonthlyMinMin)}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--surface-2)" }} role="progressbar" aria-valuenow={Math.round(stats.totalMin / 60)} aria-valuemax={rules.uopMonthlyMinMin / 60} aria-label="Postęp normy godzin">
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (stats.totalMin / rules.uopMonthlyMinMin) * 100)}%`, background: stats.totalMin >= rules.uopMonthlyMinMin ? "var(--ok)" : "var(--series-op)" }} />
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (stats.totalMin / rules.uopMonthlyMinMin) * 100)}%`, background: stats.totalMin > rules.uopMonthlyMinMin ? "var(--warn)" : stats.totalMin === rules.uopMonthlyMinMin ? "var(--ok)" : "var(--series-op)" }} />
                 </div>
+                {stats.totalMin > rules.uopMonthlyMinMin && <p className="text-xs" style={{ color: "var(--warn)" }}>Ponad normę o {fmtHours(stats.totalMin - rules.uopMonthlyMinMin)}</p>}
                 <p className="text-xs muted">Grafik na cały miesiąc (zaplanowane + przepracowane).</p>
               </div>
             )}

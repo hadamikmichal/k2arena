@@ -136,9 +136,10 @@ export function GeneratorView({ month, defaultFrom, monthEnd, existingShifts, us
             {preview.norm.length > 0 && (
               <div className="space-y-1 text-sm">
                 {preview.norm.map((n) => (
-                  <p key={n.userId} className={n.missingMin ? "alert-warn" : "alert-ok"}>
-                    {n.missingMin ? "!" : "✓"} {n.name} (UoP): {fmtHours(n.workedMin)} w miesiącu – norma {fmtHours(n.targetMin)}
+                  <p key={n.userId} className={n.missingMin || n.overMin ? "alert-warn" : "alert-ok"}>
+                    {n.missingMin || n.overMin ? "!" : "✓"} {n.name} (UoP): {fmtHours(n.workedMin)} w miesiącu – norma {fmtHours(n.targetMin)}
                     {n.missingMin > 0 && `, brakuje ${fmtHours(n.missingMin)} (za mało dostępności albo limit osób naraz)`}
+                    {n.overMin > 0 && `, przekroczona o ${fmtHours(n.overMin)} przez istniejące zmiany – skróć je ręcznie albo wybierz „Ułóż od nowa”`}
                   </p>
                 ))}
               </div>

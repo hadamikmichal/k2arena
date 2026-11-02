@@ -1,4 +1,4 @@
-// Miesięczna norma godzin instruktorów UoP.
+// Miesięczna norma godzin instruktorów UoP – tyle godzin ma być w grafiku: ani mniej, ani więcej.
 import { merge, type Interval, type Rules } from "./rules.ts";
 
 type Block = Interval & { userId: string; date: string; status?: string };
@@ -21,7 +21,7 @@ export function workedMinutes(blocks: Block[]): Map<string, number> {
   return out;
 }
 
-export type NormStatus = { userId: string; name: string; workedMin: number; targetMin: number; missingMin: number };
+export type NormStatus = { userId: string; name: string; workedMin: number; targetMin: number; missingMin: number; overMin: number };
 
 /** Stan normy dla instruktorów UoP w danym miesiącu (bloki muszą obejmować cały miesiąc). */
 export function normStatus(
@@ -34,11 +34,14 @@ export function normStatus(
     .filter((u) => u.employment === "UOP" && u.active !== false)
     .map((u) => {
       const workedMin = worked.get(u.id) ?? 0;
-      return { userId: u.id, name: u.name, workedMin, targetMin: rules.uopMonthlyMinMin, missingMin: Math.max(0, rules.uopMonthlyMinMin - workedMin) };
+      const targetMin = rules.uopMonthlyMinMin;
+      return { userId: u.id, name: u.name, workedMin, targetMin, missingMin: Math.max(0, targetMin - workedMin), overMin: Math.max(0, workedMin - targetMin) };
     });
 }
 
 export function normMessage(n: NormStatus): string {
   const h = (m: number) => (Number.isInteger(m / 60) ? `${m / 60}` : (m / 60).toFixed(1).replace(".", ","));
-  return `${n.name} (UoP): ${h(n.workedMin)} h w miesiącu – norma ${h(n.targetMin)} h, brakuje ${h(n.missingMin)} h`;
+  return n.overMin
+    ? `${n.name} (UoP): ${h(n.workedMin)} h w miesiącu – przekracza normę ${h(n.targetMin)} h o ${h(n.overMin)} h`
+    : `${n.name} (UoP): ${h(n.workedMin)} h w miesiącu – norma ${h(n.targetMin)} h, brakuje ${h(n.missingMin)} h`;
 }

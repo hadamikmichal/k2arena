@@ -39,13 +39,12 @@ Domyślne wartości (edytowalne w Ustawieniach):
 
 - Godziny otwarcia: pn–pt 10:00–22:00, sb–nd 9:00–21:00.
 - W godzinach otwarcia zawsze min. 1 operator na dyżurze. **Instruktor prowadzący sekcję nie liczy się w tym czasie jako operator** – potrzebny jest drugi instruktor.
-- Routesetting: pn–śr, w oknie 8:00–14:00.
+- Routesetting: pn–śr, w oknie 8:00–14:00. Robią go stali i UoP; generator dzieli go po równo (rotacja wg liczby routesettingów w miesiącu).
 - Min. 4 h pracy instruktora w dniu, w którym pracuje (dyżur + routesetting + sekcje).
 - Maks. instruktorów jednocześnie: pn–śr 3, pozostałe dni 2.
 - Pn–pt instruktorzy stali, sb–nd zleceniobiorcy/studenci (ostrzeżenie przy niezgodności).
-- **Instruktor UoP** (umowa o pracę): pracuje jak stały (pn–pt, może robić routesetting), ale ma miesięczną normę godzin (domyślnie min. 160 h, do zmiany w Ustawieniach). Do normy liczy się cały czas pracy: dyżury, routesetting i sekcje, bez podwójnego liczenia. Norma jest pokazywana w widoku miesiąca grafiku, w statystykach (dla pełnego miesiąca), w „Moim grafiku” i w podglądzie generatora. Generator daje instruktorom UoP dłuższe dyżury (domyślnie 8 h). Jeśli po obsadzeniu dyżurów nadal brakuje im do normy, wydłuża ich zmiany albo dokłada nowe w dni robocze, w ramach dostępności i limitu osób naraz.
+- **Instruktor UoP** (umowa o pracę): pracuje jak stały (pn–pt, może robić routesetting), ale ma miesięczną normę godzin (domyślnie 160 h, do zmiany w Ustawieniach). Norma jest też sufitem: generator nigdy nie daje ponad normę, a grafik ostrzega zarówno przy niedoborze, jak i przy nadgodzinach. Do normy liczy się cały czas pracy: dyżury, routesetting i sekcje, bez podwójnego liczenia. Norma jest pokazywana w widoku miesiąca grafiku, w statystykach (dla pełnego miesiąca), w „Moim grafiku” i w podglądzie generatora. Generator daje instruktorom UoP dłuższe dyżury (domyślnie 8 h). Jeśli po obsadzeniu dyżurów nadal brakuje im do normy, wydłuża ich zmiany albo dokłada nowe w dni robocze, w ramach dostępności i limitu osób naraz.
 - **Tylko sekcje:** osoba prowadzi wyłącznie sekcje i nie obsługuje dyżurów ani routesettingu. Generator nigdy nie przydziela jej zmian, nie ma jej na liście przy dodawaniu zmiany ani w „Pozostałych instruktorach” w widoku dnia. Ręcznie wpisana zmiana daje ostrzeżenie. Nie obowiązuje jej minimum 4 h.
-- **Instruktor sekcji** (typ zatrudnienia „Instruktor sekcji”): zleceniobiorca, który prowadzi sekcje w dowolne dni, a dyżur operatora bierze tylko w weekend. Nie robi routesettingu. Gdy przychodzi tylko na sekcje, nie obowiązuje go minimum 4 h. Generator nie da mu dyżuru w dzień roboczy.
 - Kolizje: ta sama osoba na dwóch zmianach naraz, sekcja w trakcie routesettingu.
 
 Naruszenia nie blokują zapisu – pokazują się jako **błędy** (np. brak operatora) lub **ostrzeżenia** w widoku tygodnia.

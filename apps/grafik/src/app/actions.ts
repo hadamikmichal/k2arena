@@ -385,7 +385,7 @@ export type GeneratePreview = {
   error?: string;
   shifts: { userId: string; userName: string; date: string; startMin: number; endMin: number; type: string }[];
   issues: Record<string, { level: string; message: string }[]>;
-  norm: { userId: string; name: string; workedMin: number; targetMin: number; missingMin: number }[];
+  norm: { userId: string; name: string; workedMin: number; targetMin: number; missingMin: number; overMin: number }[];
   replaced: number;
 };
 

@@ -1,12 +1,14 @@
 // Automatyczne układanie grafiku – czysta funkcja (bez bazy), łatwa do testowania.
 //
 // Faza 1 – dla każdego dnia, od rana:
-//  1. routesetting (pn–śr) – jeden instruktor stały/UoP w oknie routesettingu (nigdy instruktor sekcji),
+//  1. routesetting (pn–śr) – jeden instruktor stały/UoP w oknie routesettingu; rotacja wg liczby
+//     routesettingów w miesiącu, żeby wszyscy stali robili go po równo,
 //  2. dyżur operatora – zachłannie: bierze najwcześniejszy niepokryty moment i wybiera instruktora,
 //     który jest wtedy dostępny, nie przekroczy limitu osób naraz i da najwięcej pokrycia.
 //     Prowadzący sekcję nie liczy się w jej trakcie jako operator (tak jak w walidacji).
 //     Ranking kandydatów: pokrycie luki, typ zatrudnienia pasujący do dnia, bycie i tak na miejscu
 //     (prowadzi sekcję), wyrównanie godzin w miesiącu, zaległość względem normy UoP.
+// Norma UoP jest też sufitem – generator nigdy nie przydzieli osobie UoP godzin ponad normę.
 // Faza 2 – instruktorom UoP, którym wciąż brakuje do miesięcznej normy, dokłada dodatkowe dyżury
 //   w dni robocze, w które są dostępni i w których nie przekroczy to limitu osób naraz.
 // Faza 3 – walidacja każdego dnia i stan normy UoP.
@@ -72,6 +74,11 @@ export function generateSchedule(input: GenInput): GenResult {
   /** Czy instruktor UoP jest w tyle względem równego rozłożenia normy na dni miesiąca. */
   const behindNorm = (u: GenUser, date: string) =>
     isUop(u) && worked(u.id) < (rules.uopMonthlyMinMin * Number(date.slice(8))) / monthDays;
+  /** Ile minut osoba UoP może jeszcze dostać do normy (dla pozostałych – bez limitu). */
+  const roomLeft = (u: GenUser) => (isUop(u) ? rules.uopMonthlyMinMin - worked(u.id) : Infinity);
+  // Liczba routesettingów w miesiącu – do równej rotacji
+  const rsCount = new Map<string, number>();
+  for (const s of [...prior, ...input.existing]) if ("type" in s && s.type === "ROUTESETTING") rsCount.set(s.userId, (rsCount.get(s.userId) ?? 0) + 1);
 
   function day(date: string) {
     const wd = isoWeekday(date);
@@ -124,9 +131,13 @@ export function generateSchedule(input: GenInput): GenResult {
         .filter((u) => canTakeShift(u.employment, "ROUTESETTING", d.staffDay))
         .filter((u) => d.availability(u).some((a) => a.startMin <= iv.startMin && a.endMin >= iv.endMin))
         .filter((u) => d.fitEnd(u.id, iv.startMin, iv.endMin) === iv.endMin)
-        .map((u) => ({ u, score: (isStaff(u.employment) ? 500 : 0) + (behindNorm(u, date) ? 100 : 0) - fairness(u.id) }))
+        .filter((u) => d.dayWork(u.id, iv) - d.dayWork(u.id) <= roomLeft(u))
+        .map((u) => ({ u, score: (isStaff(u.employment) ? 500 : 0) - (rsCount.get(u.id) ?? 0) * 150 - fairness(u.id) }))
         .sort((a, b) => b.score - a.score || a.u.name.localeCompare(b.u.name))[0];
-      if (best) d.add(best.u, iv, "ROUTESETTING");
+      if (best) {
+        d.add(best.u, iv, "ROUTESETTING");
+        rsCount.set(best.u.id, (rsCount.get(best.u.id) ?? 0) + 1);
+      }
     }
 
     const skipped = new Set<number>();
@@ -152,6 +163,10 @@ export function generateSchedule(input: GenInput): GenResult {
         const tail = d.open.endMin - end;
         if (tail > 0 && tail < rules.minDailyMin && a.endMin >= d.open.endMin && d.open.endMin - t <= rules.shiftMaxMin) end = d.open.endMin;
         end = d.fitEnd(u.id, t, end);
+        // UoP: nie ponad normę (liczy się tylko czas dodany ponad to, co osoba już ma tego dnia)
+        const room = roomLeft(u);
+        if (room <= 0) continue;
+        while (end > t && d.dayWork(u.id, { startMin: t, endMin: end }) - d.dayWork(u.id) > room) end -= SLOT;
         const iv = { startMin: t, endMin: end };
         if (end <= t || d.dayWork(u.id, iv) < rules.minDailyMin) continue;
         let gain = 0;

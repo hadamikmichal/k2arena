@@ -101,8 +101,12 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
                 {fullMonth && (
                   <td className="text-right tabular-nums">
                     {s.employment === "UOP" ? (
-                      <span style={{ color: s.totalMin < rules.uopMonthlyMinMin ? "var(--warn)" : "var(--ok)" }} title={s.totalMin < rules.uopMonthlyMinMin ? `brakuje ${fmtHours(rules.uopMonthlyMinMin - s.totalMin)}` : "norma wyrobiona"}>
-                        {s.totalMin < rules.uopMonthlyMinMin ? "! " : "✓ "}{fmtHours(rules.uopMonthlyMinMin)}
+                      <span
+                        style={{ color: s.totalMin !== rules.uopMonthlyMinMin ? "var(--warn)" : "var(--ok)" }}
+                        title={s.totalMin < rules.uopMonthlyMinMin ? `brakuje ${fmtHours(rules.uopMonthlyMinMin - s.totalMin)}` : s.totalMin > rules.uopMonthlyMinMin ? `ponad normę o ${fmtHours(s.totalMin - rules.uopMonthlyMinMin)}` : "norma wyrobiona"}
+                      >
+                        {s.totalMin < rules.uopMonthlyMinMin ? "! brakuje " : s.totalMin > rules.uopMonthlyMinMin ? "! ponad " : "✓ "}
+                        {s.totalMin === rules.uopMonthlyMinMin ? fmtHours(rules.uopMonthlyMinMin) : fmtHours(Math.abs(rules.uopMonthlyMinMin - s.totalMin))}
                       </span>
                     ) : <span className="muted">—</span>}
                   </td>

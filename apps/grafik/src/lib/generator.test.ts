@@ -104,25 +104,6 @@ test("godziny rozkładają się w miarę równo między stałych", () => {
   assert.ok(Math.max(...hours) - Math.min(...hours) <= 16, `rozrzut: ${hours.join(", ")}`);
 });
 
-const SECTION_ONLY = { id: "marcin", name: "Marcin", employment: "SEKCJA" };
-
-test("instruktor sekcji: dyżury tylko w weekend, nigdy routesetting", () => {
-  // Brak innych chętnych w tygodniu – mimo to instruktor sekcji nie dostaje dyżuru w dzień roboczy.
-  const r = generateSchedule(base({ users: [SECTION_ONLY, ...CONTRACT] }));
-  const mine = r.shifts.filter((s) => s.userId === "marcin");
-  assert.ok(mine.length > 0, "powinien dostać dyżury w weekend");
-  for (const s of mine) {
-    assert.equal(s.type, "OPERATOR");
-    assert.ok(["2026-11-07", "2026-11-08"].includes(s.date), s.date);
-  }
-});
-
-test("instruktor sekcji z samą sekcją w dzień roboczy – bez ostrzeżenia o minimum 4 h", () => {
-  const sessions: SessionLike[] = [{ userId: "marcin", date: "2026-11-04", startMin: h(17.5), endMin: h(19), name: "Jaszczurki", status: "PLANNED" }];
-  const r = generateSchedule(base({ dates: ["2026-11-04"], users: [...STAFF, SECTION_ONLY], sessions }));
-  assert.ok(!r.issues["2026-11-04"].some((i) => i.userId === "marcin"), JSON.stringify(r.issues["2026-11-04"]));
-});
-
 const UOP = [
   { id: "anna", name: "Anna", employment: "UOP" },
   { id: "bartek", name: "Bartek", employment: "UOP" },
@@ -146,8 +127,8 @@ test("UoP: norma liczy pracę sprzed dnia startu generatora", () => {
   const r = generateSchedule(base({ dates: dateRange("2026-11-14", "2026-11-30"), users: [...UOP, ...CONTRACT], prior }));
   const anna = r.norm.find((n) => n.userId === "anna")!;
   assert.ok(anna.workedMin >= 160 * 60);
-  // 80 h przed startem → generator nie powinien jej dokładać dużo ponad normę
-  assert.ok(anna.workedMin <= 160 * 60 + 8 * 60 * 2, `${anna.workedMin / 60} h`);
+  // 80 h przed startem → generator dokłada dokładnie do normy, nie więcej
+  assert.ok(anna.workedMin <= 160 * 60, `${anna.workedMin / 60} h`);
 });
 
 test("UoP: brak dyspozycyjności – norma niedopełniona i zgłoszona", () => {
@@ -163,4 +144,26 @@ test("„tylko sekcje”: generator nie daje żadnych zmian, nawet w weekend i p
   const r = generateSchedule(base({ users: [only, STAFF[0]], sessions }));
   assert.ok(!r.shifts.some((s) => s.userId === "kasiaR"));
   assert.ok(!Object.values(r.issues).flat().some((i) => i.userId === "kasiaR"), "bez ostrzeżenia o minimum 4 h");
+});
+
+test("UoP: generator nigdy nie przekracza normy (sufit), także przy brakach w obsadzie", () => {
+  // Tylko dwie osoby UoP na cały miesiąc – dyżurów jest więcej niż 2 × 160 h, ale norma to sufit.
+  const r = generateSchedule(base({ dates: NOVEMBER, users: UOP.slice(0, 2) }));
+  for (const n of r.norm) assert.ok(n.workedMin <= 160 * 60, `${n.name}: ${n.workedMin / 60} h`);
+  assert.ok(errors(r).some((i) => i.message.startsWith("Brak operatora")), "luki zgłoszone zamiast nadgodzin");
+});
+
+test("routesetting rotuje równo między wszystkich stałych i UoP", () => {
+  const users = [
+    { id: "kris", name: "Kris", employment: "UOP" },
+    { id: "michal", name: "Michał", employment: "UOP" },
+    { id: "cichy", name: "Cichy", employment: "STALY" },
+    ...CONTRACT,
+  ];
+  const r = generateSchedule(base({ dates: NOVEMBER, users }));
+  const rs = r.shifts.filter((s) => s.type === "ROUTESETTING");
+  const counts = ["kris", "michal", "cichy"].map((id) => rs.filter((s) => s.userId === id).length);
+  assert.equal(rs.length, 13); // pn–śr w listopadzie 2026
+  assert.ok(Math.max(...counts) - Math.min(...counts) <= 1, `podział: ${counts.join("/")}`);
+  assert.ok(!rs.some((s) => s.employment === "ZLECENIE"));
 });
