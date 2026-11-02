@@ -10,7 +10,7 @@ export function MonthGrid({ days, today, userById, shifts, sessions, issues, onS
     <div className="card overflow-x-auto p-0">
       <div className="grid min-w-[760px]" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}>
         {WEEKDAYS.map((w, i) => (
-          <div key={w} className="border-b px-2 py-2 text-xs font-medium text-2" style={{ borderColor: "var(--border)", borderLeftWidth: i ? 1 : 0, color: i >= 5 ? "var(--accent)" : undefined }}>
+          <div key={w} className="eyebrow border-b px-2 py-2" style={{ borderColor: "var(--border)", borderLeftWidth: i ? 1 : 0, color: i >= 5 ? "var(--accent-text)" : undefined }}>
             {w}
           </div>
         ))}
@@ -27,7 +27,7 @@ export function MonthGrid({ days, today, userById, shifts, sessions, issues, onS
               style={{
                 borderColor: "var(--border)",
                 borderLeftWidth: i % 7 ? 1 : 0,
-                background: d === today ? "var(--surface-2)" : undefined,
+                background: d === today ? "var(--accent-soft)" : undefined,
                 opacity: inMonth ? 1 : 0.45,
                 boxShadow: inMonth && errors ? "inset 0 0 0 2px var(--err)" : undefined,
               }}
@@ -35,7 +35,10 @@ export function MonthGrid({ days, today, userById, shifts, sessions, issues, onS
               title="Kliknij puste miejsce, aby dodać zmianę"
             >
               <div className="mb-1 flex items-center gap-1">
-                <Link href={`/grafik?widok=dzien&data=${d}`} className="rounded px-1 text-sm font-semibold hover:bg-[var(--surface-2)] hover:underline" title="Widok dnia">
+                <Link href={`/grafik?widok=dzien&data=${d}`} className="grid h-6 min-w-6 place-items-center rounded-full px-1 text-sm font-bold hover:underline"
+                  style={d === today ? { background: "var(--accent)", color: "var(--accent-ink)" } : undefined}
+                  title="Widok dnia"
+                >
                   {Number(d.slice(8))}
                 </Link>
                 {inMonth && errors > 0 && <span className="text-[11px] font-semibold" style={{ color: "var(--err)" }} title={issues[d].filter((x) => x.level === "error").map((x) => x.message).join("\n")}>✕ {errors}</span>}

@@ -56,8 +56,15 @@ export function WeekGrid({ days, today, userById, shifts, sessions, issues, open
           const hasErr = issues[d].some((i) => i.level === "error");
           const open = opening[weekdayIndex(d)];
           return (
-            <div key={d} className="border-b border-l px-2 py-2 text-sm" style={{ borderColor: "var(--border)", background: d === today ? "var(--surface-2)" : undefined }}>
-              <Link href={`/grafik?widok=dzien&data=${d}`} className="font-semibold hover:underline" title="Widok dnia">{fmtDayShort(d)}</Link>
+            <div
+              key={d}
+              className="border-b border-l px-2 py-2 text-sm"
+              style={{ borderColor: "var(--border)", background: d === today ? "var(--accent-soft)" : undefined, boxShadow: d === today ? "inset 0 3px 0 var(--accent)" : undefined }}
+            >
+              <Link href={`/grafik?widok=dzien&data=${d}`} className="text-xs font-bold uppercase tracking-[0.06em] hover:underline" title="Widok dnia">
+                {fmtDayShort(d)}
+                {d === today && <span className="badge-accent badge ml-1.5 normal-case tracking-normal">dziś</span>}
+              </Link>
               <div className="text-xs muted">
                 {fmtMin(open.startMin)}–{fmtMin(open.endMin)}
                 {n > 0 && <span className="ml-1.5" style={{ color: hasErr ? "var(--err)" : "var(--warn)" }}>{hasErr ? "✕" : "!"} {n}</span>}

@@ -90,39 +90,40 @@ export function ScheduleBoard(props: {
   const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(new Date(`${anchor.slice(0, 7)}-15`));
   const title =
     view === "day" ? (
-      <>{WEEKDAYS_LONG[isoWeekday(anchor) - 1]} <span className="text-base font-normal muted">· {fmtDate(anchor)}</span></>
+      <><span className="capitalize">{WEEKDAYS_LONG[isoWeekday(anchor) - 1]}</span> <span className="text-lg font-semibold muted">· {fmtDate(anchor)}</span></>
     ) : view === "week" ? (
-      <>Tydzień {isoWeekNumber(days[0])} <span className="text-base font-normal muted">· {fmtDayShort(days[0])} – {fmtDayShort(days[6])}</span></>
+      <>Tydzień {isoWeekNumber(days[0])} <span className="text-lg font-semibold muted">· {fmtDayShort(days[0])} – {fmtDayShort(days[6])}</span></>
     ) : (
       <span className="capitalize">{monthName}</span>
     );
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        <div className="mr-auto">
+          <p className="eyebrow">Grafik instruktorów</p>
+          <h1 className="page-title mt-0.5">{title}</h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link className="btn" href={`/grafik/generuj?miesiac=${(view === "week" ? days[3] : anchor).slice(0, 7)}`}>Generuj miesiąc</Link>
+          {view === "week" && <button className="btn" onClick={() => setModal({ type: "copy" })}>Kopiuj poprzedni tydzień</button>}
+          <button className="btn btn-ghost" onClick={() => setModal({ type: "session", defaults: { date: view === "week" ? days[0] : anchor } })}>+ Zajęcia sekcji</button>
+          <button className="btn btn-primary" onClick={() => setModal({ type: "shift", defaults: { date: view === "week" ? days[0] : anchor } })}>+ Zmiana</button>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex overflow-hidden rounded-lg border text-sm" style={{ borderColor: "var(--border)" }} role="tablist" aria-label="Widok grafiku">
+        <div className="seg" role="tablist" aria-label="Widok grafiku">
           {(["day", "week", "month"] as View[]).map((v) => (
-            <Link
-              key={v}
-              href={href(v, anchor)}
-              role="tab"
-              aria-selected={v === view}
-              className="px-3 py-1.5"
-              style={{ background: v === view ? "var(--accent)" : "var(--surface)", color: v === view ? "var(--accent-ink)" : "var(--text-2)", fontWeight: v === view ? 600 : 400 }}
-            >
+            <Link key={v} href={href(v, anchor)} role="tab" aria-selected={v === view}>
               {VIEW_LABEL[v]}
             </Link>
           ))}
         </div>
-        <Link className="btn" href={href(view, props.prev)} aria-label="Poprzedni okres">←</Link>
-        <Link className="btn" href={href(view)}>Dziś</Link>
-        <Link className="btn" href={href(view, props.next)} aria-label="Następny okres">→</Link>
-        <h1 className="ml-1 text-xl font-semibold">{title}</h1>
-        <div className="ml-auto flex flex-wrap gap-2">
-          <Link className="btn" href={`/grafik/generuj?miesiac=${(view === "week" ? days[3] : anchor).slice(0, 7)}`}>Generuj miesiąc</Link>
-          {view === "week" && <button className="btn" onClick={() => setModal({ type: "copy" })}>Kopiuj poprzedni tydzień</button>}
-          <button className="btn" onClick={() => setModal({ type: "session", defaults: { date: view === "week" ? days[0] : anchor } })}>+ Zajęcia sekcji</button>
-          <button className="btn btn-primary" onClick={() => setModal({ type: "shift", defaults: { date: view === "week" ? days[0] : anchor } })}>+ Zmiana</button>
+        <div className="inline-flex gap-1">
+          <Link className="btn px-2.5" href={href(view, props.prev)} aria-label="Poprzedni okres" title="Poprzedni okres">←</Link>
+          <Link className="btn" href={href(view)}>Dziś</Link>
+          <Link className="btn px-2.5" href={href(view, props.next)} aria-label="Następny okres" title="Następny okres">→</Link>
         </div>
       </div>
 
@@ -149,7 +150,7 @@ export function ScheduleBoard(props: {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card">
-          <h2 className="mb-3 font-semibold">Uwagi do grafiku</h2>
+          <h2 className="mb-3 section-title">Uwagi do grafiku</h2>
           {normIssues.length > 0 && (
             <ul className="mb-1.5 space-y-1.5 text-sm">
               {normIssues.map((n) => <li key={n.userId} className="alert-warn">{normMessage(n)}</li>)}
@@ -174,7 +175,7 @@ export function ScheduleBoard(props: {
           )}
         </section>
         <section className="card">
-          <h2 className="mb-3 font-semibold">{SUMMARY_LABEL[view]}</h2>
+          <h2 className="mb-3 section-title">{SUMMARY_LABEL[view]}</h2>
           {summary.length === 0 ? (
             <p className="text-sm muted">Brak zaplanowanej pracy w tym okresie.</p>
           ) : (
