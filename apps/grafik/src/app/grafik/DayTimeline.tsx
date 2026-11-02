@@ -1,7 +1,7 @@
 "use client";
 
 import { fmtHours, fmtMin } from "@/lib/time";
-import { EMPLOYMENT_SHORT } from "@/lib/employment";
+import { EMPLOYMENT_SHORT, takesShifts } from "@/lib/employment";
 import { blockStyle, DAY_END, DAY_START, HOURS, TYPE_TAG, weekdayIndex, type BoardData } from "./board";
 
 const SPAN = DAY_END - DAY_START;
@@ -20,7 +20,7 @@ export function DayTimeline({ days, userById, shifts, sessions, issues, opening,
   const firstStart = (uid: string) => Math.min(...[...dayShifts, ...daySessions].filter((x) => x.userId === uid).map((x) => x.startMin));
   const users = [...userById.values()];
   const working = users.filter((u) => Number.isFinite(firstStart(u.id))).sort((a, b) => firstStart(a.id) - firstStart(b.id));
-  const others = users.filter((u) => u.active !== false && !working.includes(u));
+  const others = users.filter((u) => u.active !== false && takesShifts(u.employment) && !working.includes(u));
 
   function onRowClick(e: React.MouseEvent<HTMLDivElement>, userId: string) {
     if (e.target !== e.currentTarget) return;

@@ -1,6 +1,6 @@
 // Silnik reguł grafiku – czyste funkcje bez dostępu do bazy (łatwe do testowania).
 import { fmtMin, isoWeekday, WEEKDAYS_LONG } from "./time.ts";
-import { isStaff } from "./employment.ts";
+import { isStaff, leadsSectionsOnly } from "./employment.ts";
 
 export type Interval = { startMin: number; endMin: number };
 
@@ -184,7 +184,9 @@ export function validateDay(
         });
       }
     }
-    if (s.employment === "SEKCJA") {
+    if (s.employment === "TYLKO_SEKCJE") {
+      issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: prowadzi tylko sekcje – nie obsługuje dyżurów ani routesettingu` });
+    } else if (s.employment === "SEKCJA") {
       const staffDay = rules.staffDays.includes(wd);
       if (s.type === "ROUTESETTING") {
         issues.push({ level: "warning", date, refId: s.id, userId: s.userId, message: `${name(s)}: instruktor sekcji nie robi routesettingu` });
@@ -238,7 +240,7 @@ export function validateDay(
     // Minimum godzin pracy w dniu (dyżur + routesetting + sekcje, bez podwójnego liczenia).
     const worked = total(merge([...e.shifts, ...e.sessions]));
     // Instruktor sekcji przychodzi tylko na swoje zajęcia – minimum godzin go wtedy nie dotyczy.
-    const sectionOnly = e.shifts.length === 0 && e.sessions.some((x) => x.employment === "SEKCJA");
+    const sectionOnly = e.shifts.length === 0 && e.sessions.some((x) => leadsSectionsOnly(x.employment));
     if (worked > 0 && worked < rules.minDailyMin && !sectionOnly) {
       issues.push({ level: "warning", date, userId, message: `${who}: tylko ${worked / 60} h pracy – minimum to ${rules.minDailyMin / 60} h` });
     }

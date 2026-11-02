@@ -156,3 +156,11 @@ test("UoP: brak dyspozycyjności – norma niedopełniona i zgłoszona", () => {
   assert.equal(anna.workedMin, 0);
   assert.equal(anna.missingMin, 160 * 60);
 });
+
+test("„tylko sekcje”: generator nie daje żadnych zmian, nawet w weekend i przy brakach", () => {
+  const only = { id: "kasiaR", name: "Kasia R", employment: "TYLKO_SEKCJE" };
+  const sessions: SessionLike[] = [{ userId: "kasiaR", date: "2026-11-02", startMin: h(16), endMin: h(17), name: "Kijanki", status: "PLANNED" }];
+  const r = generateSchedule(base({ users: [only, STAFF[0]], sessions }));
+  assert.ok(!r.shifts.some((s) => s.userId === "kasiaR"));
+  assert.ok(!Object.values(r.issues).flat().some((i) => i.userId === "kasiaR"), "bez ostrzeżenia o minimum 4 h");
+});

@@ -83,3 +83,8 @@ test("instruktor sekcji jako operator w dzień roboczy / na routesettingu – os
   const sat = validateDay(SAT, [op("M", 9, 21, { date: SAT, employment: "SEKCJA" })], []);
   assert.ok(!sat.some((i) => i.userId === "M" && i.level === "warning"));
 });
+
+test("„tylko sekcje” na dyżurze – ostrzeżenie", () => {
+  const issues = validateDay(SAT, [op("K", 9, 21, { date: SAT, employment: "TYLKO_SEKCJE" })], []);
+  assert.ok(issues.some((i) => i.message.includes("prowadzi tylko sekcje")));
+});

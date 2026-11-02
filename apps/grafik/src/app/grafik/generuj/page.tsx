@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { monthBounds, todayWarsaw } from "@/lib/time";
+import { takesShifts } from "@/lib/employment";
 import { GeneratorView } from "./GeneratorView";
 
 export default async function GenerujPage({ searchParams }: { searchParams: Promise<{ miesiac?: string }> }) {
@@ -15,13 +16,14 @@ export default async function GenerujPage({ searchParams }: { searchParams: Prom
     prisma.shift.count({ where: { date: { gte: from > today ? from : today, lte: to } } }),
   ]);
   const submitted = new Set(submissions.map((s) => s.userId));
+  const shiftUsers = users.filter((u) => takesShifts(u.employment));
   return (
     <GeneratorView
       month={month}
       defaultFrom={from > today ? from : today <= to ? today : from}
       monthEnd={to}
       existingShifts={shiftCount}
-      users={users.map((u) => ({ ...u, submitted: submitted.has(u.id) }))}
+      users={shiftUsers.map((u) => ({ ...u, submitted: submitted.has(u.id) }))}
     />
   );
 }

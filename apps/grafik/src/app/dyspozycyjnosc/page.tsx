@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { getRules } from "@/lib/settings";
 import { loadAvailability } from "@/lib/planning";
 import { dateRange, fmtMin, isoWeekday, monthBounds, todayWarsaw, WEEKDAYS } from "@/lib/time";
-import { isStaff } from "@/lib/employment";
+import { isStaff, takesShifts } from "@/lib/employment";
 import { AvailabilityForm } from "./AvailabilityForm";
 
 const isMonth = (s?: string) => !!s && /^\d{4}-\d{2}$/.test(s);
@@ -28,6 +28,8 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
     loadAvailability(month),
   ]);
   const submittedBy = new Map(submissions.map((s) => [s.userId, s]));
+  // Osoby „tylko sekcje” nie biorą dyżurów – nie zgłaszają dyspozycyjności.
+  const shiftUsers = users.filter((u) => takesShifts(u.employment));
   const editId = isAdmin ? sp.osoba : session.sub;
   const editUser = users.find((u) => u.id === editId);
   const monthName = new Intl.DateTimeFormat("pl-PL", { month: "long", year: "numeric" }).format(new Date(`${month}-15`));
@@ -70,7 +72,7 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => {
+              {shiftUsers.map((u) => {
                 const sub = submittedBy.get(u.id);
                 return (
                   <tr key={u.id} style={{ background: u.id === editId ? "var(--surface-2)" : undefined }}>
@@ -108,7 +110,11 @@ export default async function DyspozycyjnoscPage({ searchParams }: { searchParam
         </section>
       )}
 
-      {editUser ? (
+      {editUser && !takesShifts(editUser.employment) ? (
+        <section className="card text-sm text-2">
+          {isAdmin ? `${editUser.name} prowadzi tylko sekcje` : "Prowadzisz tylko sekcje"} – bez dyżurów, więc dyspozycyjność nie jest potrzebna. Swoje zajęcia {isAdmin ? "widać" : "widzisz"} w zakładce {isAdmin ? "Sekcje" : "Mój grafik"}.
+        </section>
+      ) : editUser ? (
         <section className="card">
           <h2 className="mb-1 font-semibold">{isAdmin ? `Dyspozycyjność: ${editUser.name}` : "Moja dyspozycyjność"}</h2>
           <p className="mb-4 text-sm muted">
