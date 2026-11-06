@@ -14,21 +14,22 @@ datasource db {
 // Zatrudnienie: STALY (pn–pt) | ZLECENIE (zleceniobiorcy / studenci, sb–nd)
 //              | UOP (jak stały, z miesięczną normą godzin) | TYLKO_SEKCJE (bez dyżurów)
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String           @unique
-  passwordHash   String
-  role           String           @default("INSTRUCTOR")
-  employment     String           @default("STALY")
-  color          String           @default("#2563eb")
-  active         Boolean          @default(true)
-  icalToken      String           @unique @default(cuid())
-  createdAt      DateTime         @default(now())
-  shifts         Shift[]
-  sectionSeries  SectionSeries[]
-  sectionSessions SectionSession[]
-  availability   Availability[]
+  id                      String                   @id @default(cuid())
+  name                    String
+  email                   String                   @unique
+  passwordHash            String
+  role                    String                   @default("INSTRUCTOR")
+  employment              String                   @default("STALY")
+  color                   String                   @default("#2563eb")
+  active                  Boolean                  @default(true)
+  icalToken               String                   @unique @default(cuid())
+  createdAt               DateTime                 @default(now())
+  shifts                  Shift[]
+  sectionSeries           SectionSeries[]
+  sectionSessions         SectionSession[]
+  availability            Availability[]
   availabilitySubmissions AvailabilitySubmission[]
+  reviewedForms           ClientForm[]
 }
 
 // Zmiana w grafiku. Typ: OPERATOR (dyżur operatora ściany) | ROUTESETTING
@@ -56,7 +57,7 @@ model SectionSeries {
   kind      String           @default("DZIECI") // DZIECI | DOROSLI
   userId    String
   user      User             @relation(fields: [userId], references: [id])
-  weekday   Int              // 1 = poniedziałek ... 7 = niedziela
+  weekday   Int // 1 = poniedziałek ... 7 = niedziela
   startMin  Int
   endMin    Int
   validFrom String
@@ -117,4 +118,31 @@ model AvailabilitySubmission {
   submittedAt DateTime @default(now())
 
   @@unique([userId, month])
+}
+
+// Ankieta klienta ściany (formularz danych osobowych), wypełniana publicznie przez kod QR.
+// Status: WERYFIKACJA (wszystkie odpowiedzi TAK – instruktor sprawdza umiejętności)
+//       | SZKOLENIE (choć jedno NIE – klient idzie na wprowadzenie START / szkolenie)
+//       | ZAKONCZONE (instruktor potwierdził umiejętności i nadał kategorię)
+// Kategorie (category, po przecinku): A – autoasekuracja, W – wędka, P – prowadzenie.
+model ClientForm {
+  id             String    @id @default(cuid())
+  name           String
+  birthDate      String
+  phone          String
+  email          String
+  minor1         String?
+  minor2         String?
+  knowsAutobelay Boolean
+  canHarness     Boolean
+  canBelay       Boolean
+  status         String
+  category       String?
+  note           String?
+  reviewedById   String?
+  reviewedBy     User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([status, createdAt])
 }

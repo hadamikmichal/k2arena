@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, requireUser } from "@/lib/auth";
@@ -15,6 +16,8 @@ import { addDays, dateRange, isoWeekday, monthBounds, toMin, todayWarsaw } from 
 import { runGenerator } from "@/lib/planning";
 import type { Rules } from "@/lib/rules";
 import { EMPLOYMENT_TYPES } from "@/lib/employment";
+import { ageOn, CATEGORIES, FORM_STATUSES, initialStatus, notificationText } from "@/lib/clientForm";
+import { notifyInstructors } from "@/lib/whatsapp";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -429,4 +432,90 @@ export async function applyGenerate(input: z.infer<typeof generateSchema>): Prom
   } catch (err) {
     return fail(err);
   }
+}
+
+// ---------- Ankieta klienta (publiczna) ----------
+
+const yesNo = z.enum(["TAK", "NIE"], { errorMap: () => ({ message: "Odpowiedz na wszystkie pytania TAK / NIE" }) });
+const accepted = (msg: string) => z.literal("on", { errorMap: () => ({ message: msg }) });
+
+const clientFormSchema = z.object({
+  name: z.string().trim().min(3, "Podaj imię i nazwisko").max(120),
+  birthDate: date,
+  phone: z.string().trim().regex(/^\+?[\d\s-]{9,20}$/, "Nieprawidłowy numer telefonu"),
+  email: z.string().trim().toLowerCase().email("Nieprawidłowy e-mail").max(200),
+  minor1: z.string().trim().max(120).optional(),
+  minor2: z.string().trim().max(120).optional(),
+  knowsAutobelay: yesNo,
+  canHarness: yesNo,
+  canBelay: yesNo,
+  health: accepted("Potwierdź oświadczenie o braku przeciwwskazań zdrowotnych i regulaminie"),
+  risk: accepted("Potwierdź oświadczenia ze strefy wspinania"),
+  liability: accepted("Potwierdź odpowiedzialność za przestrzeganie zasad"),
+  rodo: accepted("Potwierdź zapoznanie się z informacją o danych osobowych"),
+});
+
+export type ClientFormState = { ok?: boolean; status?: string; error?: string } | null;
+
+export async function submitClientForm(_: ClientFormState, fd: FormData): Promise<ClientFormState> {
+  // Pułapka na boty: pole niewidoczne dla ludzi.
+  if (fd.get("website")) return { ok: true, status: "WERYFIKACJA" };
+  try {
+    const v = clientFormSchema.parse(Object.fromEntries(fd));
+    const today = todayWarsaw();
+    const age = ageOn(v.birthDate, today);
+    if (v.birthDate > today || age > 110) return { error: "Nieprawidłowa data urodzenia" };
+    const answers = { knowsAutobelay: v.knowsAutobelay === "TAK", canHarness: v.canHarness === "TAK", canBelay: v.canBelay === "TAK" };
+    const minors = [v.minor1, v.minor2].filter((m): m is string => Boolean(m));
+    if (minors.length && age < 18) return { error: "Opiekę nad osobami niepełnoletnimi może sprawować tylko osoba pełnoletnia" };
+    const status = initialStatus(answers);
+    const form = await prisma.clientForm.create({
+      data: { name: v.name, birthDate: v.birthDate, phone: v.phone, email: v.email, minor1: minors[0] ?? null, minor2: minors[1] ?? null, ...answers, status },
+    });
+    const appUrl = process.env.APP_URL ?? "http://localhost:3010";
+    after(() => notifyInstructors(notificationText({ ...answers, id: form.id, name: form.name, minors: minors.length, adult: age >= 18 }, appUrl)));
+    revalidatePath("/ankiety");
+    return { ok: true, status };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+const reviewSchema = z.object({
+  id: z.string().min(1),
+  note: z.string().trim().max(500).optional(),
+});
+
+/** Instruktor potwierdza umiejętności klienta i nadaje kategorię (dół papierowego formularza). */
+export async function reviewClientForm(_: FormState, fd: FormData): Promise<FormState> {
+  const session = await requireUser();
+  try {
+    const v = reviewSchema.parse(Object.fromEntries(fd));
+    const codes = CATEGORIES.map((c) => c.code).filter((c) => fd.getAll("category").includes(c));
+    if (!codes.length) return { error: "Wybierz co najmniej jedną kategorię" };
+    await prisma.clientForm.update({
+      where: { id: v.id },
+      data: { status: "ZAKONCZONE", category: codes.join(","), note: v.note || null, reviewedById: session.sub, reviewedAt: new Date() },
+    });
+    revalidatePath("/ankiety");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function setClientFormStatus(id: string, status: string): Promise<void> {
+  await requireUser();
+  const s = z.enum(FORM_STATUSES).parse(status);
+  await prisma.clientForm.update({
+    where: { id },
+    data: s === "ZAKONCZONE" ? { status: s } : { status: s, category: null, reviewedById: null, reviewedAt: null },
+  });
+  revalidatePath("/ankiety");
+}
+
+export async function deleteClientForm(id: string): Promise<void> {
+  await requireAdmin();
+  await prisma.clientForm.delete({ where: { id } });
+  revalidatePath("/ankiety");
 }

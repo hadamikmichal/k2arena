@@ -31,6 +31,7 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
 | **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV (Excel). |
 | **Ustawienia** | admin | Edytowalne reguły + status synchronizacji Google. |
+| **Ankiety** | instruktor, admin | Ankiety klientów ściany (publiczny formularz `/formularz`, otwierany kodem QR). Wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku. Usuwać może tylko admin. |
 | **Mój grafik** | instruktor | Najbliższe 4 tygodnie, statystyki miesiąca, link do kalendarza, zmiana hasła. |
 
 ## Reguły grafiku (`src/lib/rules.ts`)
@@ -75,14 +76,40 @@ Dla każdego dnia miesiąca:
    - W Google Calendar utwórz kalendarz (np. „K2 – grafik”), udostępnij go e-mailowi konta serwisowego z uprawnieniem *Wprowadzanie zmian w wydarzeniach*.
    - Ustaw `GOOGLE_CALENDAR_ID`, zrestartuj/przewdróż aplikację, w Ustawieniach kliknij *Synchronizuj* dla istniejących danych.
 
+## Ankieta klienta i powiadomienia WhatsApp
+
+Formularz danych osobowych dla klientów ściany jest publiczny (bez logowania) pod adresem `APP_URL/formularz`.
+Kod QR do wydruku: zakładka **Ankiety → Kod QR** (link bierze się z `APP_URL`, więc na produkcji musi to być publiczny adres).
+Po wysłaniu ankiety do grupy instruktorów na WhatsAppie idzie wiadomość: imię i nazwisko, wynik (weryfikacja / szkolenie) i link do listy.
+Telefon, e-mail i data urodzenia nie trafiają na WhatsAppa – są tylko w aplikacji.
+
+Oficjalne WhatsApp Business API nie wysyła do zwykłych grup, dlatego używamy [Green-API](https://green-api.com) – podpina numer WhatsApp jak „połączone urządzenie”.
+Najlepiej osobny numer (np. tani starter na telefon służbowy), nie prywatny.
+
+1. Załóż konto na green-api.com i utwórz instancję (plan *Developer* jest darmowy do testów, na stałe potrzebny płatny).
+2. W panelu instancji zeskanuj kod QR telefonem z tym numerem (WhatsApp → Połączone urządzenia).
+3. Dodaj ten numer do grupy instruktorów na WhatsAppie.
+4. Wpisz `GREEN_API_URL` (*apiUrl*), `GREEN_API_INSTANCE_ID` (*idInstance*), `GREEN_API_TOKEN` (*apiTokenInstance*) do `.env` i odczytaj ID grupy:
+
+```bash
+set -a && source .env && set +a && npm run whatsapp:groups
+```
+
+5. Wpisz ID grupy (kończy się na `@g.us`) jako `WHATSAPP_GROUP_ID` i wyślij wiadomość testową: `npm run whatsapp:groups -- test`.
+6. Na Vercelu ustaw te same 4 zmienne (*Settings → Environment Variables* albo `npx vercel env add NAZWA production`) i wdróż ponownie.
+
+Bez tych zmiennych ankiety działają normalnie, tylko bez powiadomień (admin widzi ostrzeżenie w zakładce Ankiety).
+
 ## Struktura
 
 ```
-prisma/schema.prisma    model danych (User, Shift, SectionSeries, SectionSession, Setting)
+prisma/schema.prisma    model danych (User, Shift, SectionSeries, SectionSession, Setting, ClientForm)
 prisma/seed.ts          dane demo
 src/lib/rules.ts        silnik reguł (czyste funkcje + testy)
 src/lib/calendar.ts     generator iCal
 src/lib/google.ts       synchronizacja z Google Calendar API
+src/lib/clientForm.ts   ankieta klienta: statusy, kategorie, treść powiadomienia
+src/lib/whatsapp.ts     powiadomienia WhatsApp (Green-API)
 src/lib/stats.ts        statystyki
 src/app/actions.ts      akcje serwera (zapis danych)
 src/app/*/              widoki
@@ -92,7 +119,7 @@ src/app/*/              widoki
 
 - Projekt Vercel z **Root Directory = `apps/grafik`**, podłączony do repozytorium GitHub – każdy push na `main` wdraża nową wersję.
 - Baza: Neon Postgres z Vercel Marketplace (ustawia `DATABASE_URL` i `DATABASE_URL_UNPOOLED`).
-- Zmienne: `AUTH_SECRET`, `APP_URL` (publiczny adres, np. `https://grafik.k2arena.pl`), opcjonalnie Google.
+- Zmienne: `AUTH_SECRET`, `APP_URL` (publiczny adres, np. `https://grafik.k2arena.pl`), opcjonalnie Google i Green-API (WhatsApp).
 - Build (`npm run build`) sam uruchamia migracje (`prisma migrate deploy`).
 - Pierwsze konto administratora (z lokalnego komputera, ze zmiennymi produkcyjnymi):
 

@@ -17,6 +17,7 @@ const ADMIN_NAV = [
   { href: "/grafik", label: "Grafik" },
   { href: "/sekcje", label: "Sekcje" },
   { href: "/dyspozycyjnosc", label: "Dyspozycyjność" },
+  { href: "/ankiety", label: "Ankiety" },
   { href: "/instruktorzy", label: "Instruktorzy" },
   { href: "/statystyki", label: "Statystyki" },
   { href: "/ustawienia", label: "Ustawienia" },
@@ -26,12 +27,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getSession();
   const nav = session?.role === "ADMIN"
     ? [...ADMIN_NAV, { href: "/moj-grafik", label: "Konto" }]
-    : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }];
+    : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }, { href: "/ankiety", label: "Ankiety" }];
   return (
     <html lang="pl" className={sourceSans.variable}>
       <body className="min-h-screen">
         {session && (
-          <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", borderColor: "var(--border)" }}>
+          <header className="print:hidden sticky top-0 z-30 border-b backdrop-blur" style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", borderColor: "var(--border)" }}>
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
               <Link href="/" className="flex items-center gap-3" aria-label="K2 Arena – grafik, strona główna">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
