@@ -29,9 +29,9 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | **Generuj grafik** | admin | Automatyczne ułożenie dyżurów i routesettingu na miesiąc na podstawie reguł, dyspozycyjności i sekcji. Tryby: *uzupełnij luki* albo *ułóż od nowa*. Najpierw podgląd z ostrzeżeniami i godzinami na osobę, potem zapis. |
 | **Sekcje** | admin | Sekcje cykliczne (dzień tygodnia, godziny, prowadzący, okres) → automatycznie generowane zajęcia. Pojedyncze zajęcia: zastępstwo, odwołanie, oznaczenie jako odbyte. Zajęcia jednorazowe. |
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
-| **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV (Excel). |
+| **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV i Excel. |
 | **Ustawienia** | admin | Edytowalne reguły + status synchronizacji Google. |
-| **Ankiety** | instruktor, admin | Ankiety klientów ściany (publiczny formularz `/formularz`, otwierany kodem QR). Wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku. Usuwać może tylko admin. |
+| **Ankiety** | instruktor, admin | Ankiety klientów ściany (publiczny formularz `/formularz`, otwierany kodem QR). Wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku, *Drukuj* przy każdej ankiecie. Admin: *Raport i eksport* (statystyki, CSV, Excel, wydruk wszystkich z okresu), usuwanie. |
 | **Mój grafik** | instruktor | Najbliższe 4 tygodnie, statystyki miesiąca, link do kalendarza, zmiana hasła. |
 
 ## Reguły grafiku (`src/lib/rules.ts`)
@@ -86,6 +86,16 @@ Po wysłaniu ankiety wszyscy zalogowani dostają powiadomienie w aplikacji – d
 Po kliknięciu *Włącz w przeglądarce* w dzwonku nowe ankiety pokazują się też jako powiadomienie systemowe – dopóki aplikacja
 jest otwarta w którejś karcie (np. na komputerze w recepcji). Powiadomienia starsze niż 90 dni są usuwane, ankiety zostają.
 
+### Wydruk, eksport i statystyki ankiet (podkładka prawna)
+
+- **Drukuj** (przy każdej ankiecie) – kopia formularza na A4: dane klienta, pełna treść zaakceptowanych oświadczeń,
+  odpowiedzi TAK/NIE, osoby małoletnie, potwierdzenie instruktora, data i godzina wysłania, adres IP, przeglądarka, ID.
+- **Ankiety → Raport i eksport** (admin) – wybór okresu, statystyki (wynik przy wysłaniu, obecny status, odpowiedzi NIE,
+  nadane kategorie, klienci niepełnoletni i osoby pod opieką, miesiące, zatwierdzenia wg instruktora) oraz pobieranie:
+  Excel (arkusze *Ankiety* i *Statystyki*), CSV ankiet, CSV statystyk, wydruk wszystkich ankiet z okresu (każda na osobnej stronie, „Zapisz jako PDF” w oknie drukowania).
+- Treść oświadczeń jest w `src/lib/clientForm.ts` (`CONSENTS`) z numerem wersji zapisywanym przy każdej ankiecie.
+  **Przy zmianie treści dodaj nową wersję zamiast edytować starą** – wtedy stare ankiety drukują się z tekstem, który klient faktycznie zaakceptował.
+
 ## Struktura
 
 ```
@@ -96,6 +106,8 @@ src/lib/calendar.ts     generator iCal
 src/lib/google.ts       synchronizacja z Google Calendar API
 src/lib/clientForm.ts   ankieta klienta: statusy, kategorie, treść powiadomienia
 src/lib/notifications.ts powiadomienia w aplikacji (dzwonek)
+src/lib/formStats.ts    statystyki ankiet, tabele do CSV/Excela
+src/lib/xlsx.ts         eksport .xlsx (exceljs)
 src/lib/stats.ts        statystyki
 src/app/actions.ts      akcje serwera (zapis danych)
 src/app/*/              widoki

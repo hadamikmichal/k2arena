@@ -23,6 +23,40 @@ export const SKILL_QUESTIONS = [
   { key: "canBelay", label: "Potrafię asekurować", short: "asekuracja" },
 ] as const;
 
+// Treść oświadczeń z formularza. Przy każdej zmianie treści dodaj NOWĄ wersję i ustaw CONSENT_VERSION –
+// stare ankiety drukują się z tekstem, który klient faktycznie zaakceptował (ClientForm.consentVersion).
+export type ConsentTexts = { health: string; riskItems: string[]; risk: string; liability: string; rodo: string };
+
+export const CONSENT_VERSION = "2026-11-06";
+
+export const CONSENTS: Record<string, ConsentTexts> = {
+  "2026-11-06": {
+    health:
+      "Oświadczam, iż nie posiadam żadnych przeciwwskazań zdrowotnych do korzystania z usług sportowych w Klubie Sportowym K2 Arena w Opolu oraz informuję, iż zapoznałem/łam się z regulaminem Klubu Sportowego K2 Arena oraz zobowiązuję się do jego przestrzegania.",
+    riskItems: [
+      "Zostałem/am poinformowany/a i zdaję sobie sprawę, że wspinanie to sport niebezpieczny, stwarzający ryzyko utraty zdrowia/życia dla osoby wspinającej się lub osób postronnych.",
+      "Przeczytałem/am i zrozumiałem/am treść Regulaminu Klubu Sportowego K2 Arena, a także rozumiem zasady bezpieczeństwa na ściance wspinaczkowej i bulderowni. Zobowiązuję się do przestrzegania zasad bezpieczeństwa oraz poleceń instruktora.",
+      "Nie mam przeciwwskazań zdrowotnych do uprawiania wspinaczki.",
+      "Mam świadomość, że korzystając z własnego sprzętu do wspinania czynię to na własne ryzyko i ponoszę pełną odpowiedzialność za jego sprawność.",
+      "Rozumiem, że brak prawidłowego szkolenia i umiejętności może spowodować wypadek lub kontuzję moją lub innych użytkowników ściany i bulderowni.",
+      "Rozumiem, że aby bezpiecznie wspinać się na ściance wspinaczkowej K2 Arena, konieczne jest odbycie wprowadzenia „START” i sprawdzenie moich umiejętności przez instruktora.",
+      "Rozumiem, że zgodnie z regulaminem Klubu Sportowego K2 Arena mogę nadzorować tylko dwie osoby niepełnoletnie i biorę pełną odpowiedzialność za bezpieczeństwo i zachowanie tych osób.",
+    ],
+    risk: "Potwierdzam powyższe oświadczenia.",
+    liability: "Ponoszę odpowiedzialność za wypadki wynikające z nieprzestrzegania zasad wspinania, regulaminu i poleceń instruktora.",
+    rodo:
+      "Wypełnienie niniejszego formularza jest warunkiem niezbędnym do korzystania z usług sportowych w Obiekcie Sportowym K2 Arena w Opolu przy ul. Halickiej 1. Administratorem moich danych osobowych jest Fundacja Klub Sportowy K2 Arena w Opolu, ul. Halicka 1, 45-319 Opole.",
+  },
+};
+
+export function consentTexts(version: string): ConsentTexts {
+  return CONSENTS[version] ?? CONSENTS[CONSENT_VERSION];
+}
+
+// Treść potwierdzenia instruktora (dół papierowego formularza).
+export const REVIEW_TEXT =
+  "Klient odbył wprowadzenie START / szkolenie ABC / szkolenie PRO, zademonstrował wystarczające umiejętności, aby wspinać się bez opieki instruktora K2 Arena, i otrzymuje kategorię:";
+
 export type SkillAnswers = { knowsAutobelay: boolean; canHarness: boolean; canBelay: boolean };
 
 /** Wszystkie odpowiedzi TAK → weryfikacja umiejętności; choć jedno NIE → szkolenie. */

@@ -58,9 +58,17 @@ export function NotificationBell() {
   }, [load]);
 
   // Licznik w tytule karty – widać go także w innej zakładce.
+  // Next nadpisuje <title> przy odświeżeniu/nawigacji, więc pilnujemy prefiksu obserwatorem.
   useEffect(() => {
-    const base = document.title.replace(/^\(\d+\) /, "");
-    document.title = data.unread ? `(${data.unread}) ${base}` : base;
+    const apply = () => {
+      const base = document.title.replace(/^\(\d+\) /, "");
+      const want = data.unread ? `(${data.unread}) ${base}` : base;
+      if (document.title !== want) document.title = want;
+    };
+    apply();
+    const obs = new MutationObserver(apply);
+    obs.observe(document.head, { subtree: true, childList: true, characterData: true });
+    return () => obs.disconnect();
   }, [data.unread]);
 
   useEffect(() => {

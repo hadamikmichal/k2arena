@@ -144,9 +144,14 @@ model ClientForm {
   reviewedById   String?
   reviewedBy     User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt     DateTime?
+  // Dowód złożenia oświadczeń: wersja treści (CONSENTS w src/lib/clientForm.ts), adres IP i przeglądarka.
+  consentVersion String    @default("2026-11-06")
+  ip             String?
+  userAgent      String?
   createdAt      DateTime  @default(now())
 
   @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 // Powiadomienie w aplikacji (dzwonek w nagłówku) – wspólne dla wszystkich zalogowanych.

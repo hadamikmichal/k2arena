@@ -4,7 +4,7 @@ import { useActionState, useCallback, useEffect, useState, useTransition } from 
 import { useRouter } from "next/navigation";
 import { deleteClientForm, reviewClientForm, setClientFormStatus } from "../actions";
 import { Modal } from "@/components/Modal";
-import { CATEGORIES, SKILL_QUESTIONS } from "@/lib/clientForm";
+import { CATEGORIES, REVIEW_TEXT, SKILL_QUESTIONS } from "@/lib/clientForm";
 
 type FormRow = {
   id: string; name: string; phone: string; email: string; birthDate: string; age: number; minors: string[];
@@ -64,6 +64,7 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                   )}
                 </td>
                 <td className="whitespace-nowrap text-right">
+                  <a className="btn mr-1" href={`/ankiety/druk?id=${f.id}`} target="_blank" rel="noopener">Drukuj</a>
                   {f.status !== "ZAKONCZONE" && <button className="btn btn-primary mr-1" onClick={() => setReview(f)}>Zatwierdź</button>}
                   {f.status === "WERYFIKACJA" && (
                     <button className="btn mr-1" disabled={pending} onClick={() => run(() => setClientFormStatus(f.id, "SZKOLENIE"))}>Na szkolenie</button>
@@ -101,10 +102,7 @@ function ReviewForm({ form, onDone }: { form: FormRow; onDone: () => void }) {
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={form.id} />
-      <p className="text-sm text-2">
-        Klient odbył wprowadzenie START / szkolenie ABC / szkolenie PRO, zademonstrował wystarczające umiejętności, aby wspinać się
-        bez opieki instruktora K2 Arena, i otrzymuje kategorię:
-      </p>
+      <p className="text-sm text-2">{REVIEW_TEXT}</p>
       <div className="space-y-1.5">
         {CATEGORIES.map((c) => (
           <label key={c.code} className="flex items-center gap-2 text-sm font-semibold">

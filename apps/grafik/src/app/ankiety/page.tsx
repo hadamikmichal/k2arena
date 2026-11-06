@@ -37,6 +37,7 @@ export default async function AnkietyPage({ searchParams }: { searchParams: Prom
           <input type="hidden" name="status" value={status} />
           <input name="q" defaultValue={q} placeholder="Szukaj: nazwisko, telefon, e-mail" className="input w-64" />
         </form>
+        {session.role === "ADMIN" && <Link href="/ankiety/raport" className="btn">Raport i eksport</Link>}
         <Link href="/ankiety/qr" className="btn">Kod QR</Link>
       </div>
       <FormsView

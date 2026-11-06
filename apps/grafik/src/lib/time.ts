@@ -59,6 +59,23 @@ export function todayWarsaw(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(new Date());
 }
 
+/** Data "YYYY-MM-DD" chwili w czasie Europe/Warsaw. */
+export function dateWarsaw(d: Date): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(d);
+}
+
+/** Początek dnia "YYYY-MM-DD" w Europe/Warsaw jako chwila (UTC) – do filtrowania pól DateTime po dacie lokalnej. */
+export function warsawDayStart(date: string): Date {
+  const [y, m, d] = date.split("-").map(Number);
+  const utc = Date.UTC(y, m - 1, d);
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Warsaw", hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" })
+      .formatToParts(new Date(utc)).map((x) => [x.type, Number(x.value)]),
+  );
+  const offset = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) - utc;
+  return new Date(utc - offset);
+}
+
 export function fmtDate(date: string): string {
   const [y, m, d] = date.split("-");
   return `${d}.${m}.${y}`;

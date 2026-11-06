@@ -50,6 +50,7 @@ export default async function StatystykiPage({ searchParams }: { searchParams: P
           </div>
           <button className="btn">Pokaż</button>
           <a className="btn" href={`/api/statystyki?od=${from}&do=${to}`}>Eksport CSV</a>
+          <a className="btn" href={`/api/statystyki?od=${from}&do=${to}&format=xlsx`}>Excel</a>
         </form>
       </div>
 

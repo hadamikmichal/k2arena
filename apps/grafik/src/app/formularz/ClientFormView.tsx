@@ -2,7 +2,9 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { submitClientForm } from "../actions";
-import { SKILL_QUESTIONS } from "@/lib/clientForm";
+import { CONSENT_VERSION, consentTexts, SKILL_QUESTIONS } from "@/lib/clientForm";
+
+const TEXT = consentTexts(CONSENT_VERSION);
 
 export function ClientFormView() {
   // Zmiana klucza = czysty formularz dla kolejnej osoby (np. tablet na recepcji).
@@ -60,25 +62,15 @@ function FormRound({ onNext }: { onNext: () => void }) {
         </div>
         {/* Pułapka na boty – ukryta przed ludźmi i czytnikami ekranu. */}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
-        <Consent name="health">
-          Oświadczam, iż nie posiadam żadnych przeciwwskazań zdrowotnych do korzystania z usług sportowych w Klubie Sportowym
-          K2 Arena w Opolu oraz informuję, iż zapoznałem/łam się z regulaminem Klubu Sportowego K2 Arena oraz zobowiązuję się
-          do jego przestrzegania.
-        </Consent>
+        <Consent name="health">{TEXT.health}</Consent>
       </section>
 
       <section className="card space-y-3 p-5">
         <h2 className="text-lg font-extrabold uppercase" style={{ letterSpacing: "-0.01em" }}>Strefa wspinania</h2>
         <ul className="text-2 list-disc space-y-2 pl-5 text-sm">
-          <li>Zostałem/am poinformowany/a i zdaję sobie sprawę, że wspinanie to sport niebezpieczny, stwarzający ryzyko utraty zdrowia/życia dla osoby wspinającej się lub osób postronnych.</li>
-          <li>Przeczytałem/am i zrozumiałem/am treść Regulaminu Klubu Sportowego K2 Arena, a także rozumiem zasady bezpieczeństwa na ściance wspinaczkowej i bulderowni. Zobowiązuję się do przestrzegania zasad bezpieczeństwa oraz poleceń instruktora.</li>
-          <li>Nie mam przeciwwskazań zdrowotnych do uprawiania wspinaczki.</li>
-          <li>Mam świadomość, że korzystając z własnego sprzętu do wspinania czynię to na własne ryzyko i ponoszę pełną odpowiedzialność za jego sprawność.</li>
-          <li>Rozumiem, że brak prawidłowego szkolenia i umiejętności może spowodować wypadek lub kontuzję moją lub innych użytkowników ściany i bulderowni.</li>
-          <li>Rozumiem, że aby bezpiecznie wspinać się na ściance wspinaczkowej K2 Arena, konieczne jest odbycie wprowadzenia „START” i sprawdzenie moich umiejętności przez instruktora.</li>
-          <li>Rozumiem, że zgodnie z regulaminem Klubu Sportowego K2 Arena mogę nadzorować tylko dwie osoby niepełnoletnie i biorę pełną odpowiedzialność za bezpieczeństwo i zachowanie tych osób.</li>
+          {TEXT.riskItems.map((t) => <li key={t}>{t}</li>)}
         </ul>
-        <Consent name="risk">Potwierdzam powyższe oświadczenia.</Consent>
+        <Consent name="risk">{TEXT.risk}</Consent>
         <div>
           <p className="label">Imiona i nazwiska osób małoletnich pod moją opieką (jeśli dotyczy)</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -110,14 +102,8 @@ function FormRound({ onNext }: { onNext: () => void }) {
       </section>
 
       <section className="card space-y-3 p-5">
-        <Consent name="liability">
-          Ponoszę odpowiedzialność za wypadki wynikające z nieprzestrzegania zasad wspinania, regulaminu i poleceń instruktora.
-        </Consent>
-        <Consent name="rodo">
-          Wypełnienie niniejszego formularza jest warunkiem niezbędnym do korzystania z usług sportowych w Obiekcie Sportowym
-          K2 Arena w Opolu przy ul. Halickiej 1. Administratorem moich danych osobowych jest Fundacja Klub Sportowy K2 Arena
-          w Opolu, ul. Halicka 1, 45-319 Opole.
-        </Consent>
+        <Consent name="liability">{TEXT.liability}</Consent>
+        <Consent name="rodo">{TEXT.rodo}</Consent>
       </section>
 
       {state?.error && <p className="alert-error" role="alert">{state.error}</p>}

@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -16,7 +16,7 @@ import { addDays, dateRange, isoWeekday, monthBounds, toMin, todayWarsaw } from 
 import { runGenerator } from "@/lib/planning";
 import type { Rules } from "@/lib/rules";
 import { EMPLOYMENT_TYPES } from "@/lib/employment";
-import { ageOn, CATEGORIES, FORM_STATUSES, formNotification, initialStatus } from "@/lib/clientForm";
+import { ageOn, CATEGORIES, CONSENT_VERSION, FORM_STATUSES, formNotification, initialStatus } from "@/lib/clientForm";
 import { notify } from "@/lib/notifications";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
@@ -469,8 +469,15 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
     const minors = [v.minor1, v.minor2].filter((m): m is string => Boolean(m));
     if (minors.length && age < 18) return { error: "Opiekę nad osobami niepełnoletnimi może sprawować tylko osoba pełnoletnia" };
     const status = initialStatus(answers);
+    // Dowód złożenia oświadczeń (wydruk ankiety): wersja treści, IP i przeglądarka.
+    const h = await headers();
+    const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip"))?.trim().slice(0, 64) || null;
+    const userAgent = h.get("user-agent")?.slice(0, 300) || null;
     const form = await prisma.clientForm.create({
-      data: { name: v.name, birthDate: v.birthDate, phone: v.phone, email: v.email, minor1: minors[0] ?? null, minor2: minors[1] ?? null, ...answers, status },
+      data: {
+        name: v.name, birthDate: v.birthDate, phone: v.phone, email: v.email, minor1: minors[0] ?? null, minor2: minors[1] ?? null,
+        ...answers, status, consentVersion: CONSENT_VERSION, ip, userAgent,
+      },
     });
     after(async () => {
       try {
