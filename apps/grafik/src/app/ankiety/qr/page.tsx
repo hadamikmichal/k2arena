@@ -1,12 +1,13 @@
 import QRCode from "qrcode";
 import { requireUser } from "@/lib/auth";
+import { appUrl } from "@/lib/appUrl";
 import { CopyButton } from "@/components/CopyButton";
 import { PrintButton } from "./PrintButton";
 
 // Kod QR do wydruku (recepcja, ściana) – prowadzi do publicznej ankiety /formularz.
 export default async function QrPage() {
   await requireUser();
-  const url = `${process.env.APP_URL ?? "http://localhost:3010"}/formularz`;
+  const url = `${await appUrl()}/formularz`;
   const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#17181c", light: "#ffffff" } });
   const download = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   return (
@@ -25,7 +26,7 @@ export default async function QrPage() {
         <p className="break-all text-xs">{url}</p>
       </div>
       {url.includes("localhost") && (
-        <p className="alert-warn print:hidden">APP_URL wskazuje na localhost – ten kod działa tylko na tym komputerze. Na produkcji ustaw publiczny adres.</p>
+        <p className="alert-warn print:hidden">Aplikacja działa na localhost – ten kod zadziała tylko na tym komputerze. Otwórz tę stronę w wersji produkcyjnej, żeby wydrukować działający kod.</p>
       )}
     </div>
   );

@@ -18,6 +18,7 @@ import type { Rules } from "@/lib/rules";
 import { EMPLOYMENT_TYPES } from "@/lib/employment";
 import { ageOn, CATEGORIES, FORM_STATUSES, initialStatus, notificationText } from "@/lib/clientForm";
 import { notifyInstructors } from "@/lib/whatsapp";
+import { appUrl } from "@/lib/appUrl";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -472,8 +473,8 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
     const form = await prisma.clientForm.create({
       data: { name: v.name, birthDate: v.birthDate, phone: v.phone, email: v.email, minor1: minors[0] ?? null, minor2: minors[1] ?? null, ...answers, status },
     });
-    const appUrl = process.env.APP_URL ?? "http://localhost:3010";
-    after(() => notifyInstructors(notificationText({ ...answers, id: form.id, name: form.name, minors: minors.length, adult: age >= 18 }, appUrl)));
+    const url = await appUrl();
+    after(() => notifyInstructors(notificationText({ ...answers, id: form.id, name: form.name, minors: minors.length, adult: age >= 18 }, url)));
     revalidatePath("/ankiety");
     return { ok: true, status };
   } catch (err) {
