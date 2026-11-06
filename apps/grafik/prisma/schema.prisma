@@ -24,6 +24,8 @@ model User {
   active                  Boolean                  @default(true)
   icalToken               String                   @unique @default(cuid())
   createdAt               DateTime                 @default(now())
+  // Powiadomienia nowsze niż ta data są dla użytkownika nieprzeczytane (dzwonek w nagłówku).
+  notificationsSeenAt     DateTime                 @default(now())
   shifts                  Shift[]
   sectionSeries           SectionSeries[]
   sectionSessions         SectionSession[]
@@ -145,4 +147,17 @@ model ClientForm {
   createdAt      DateTime  @default(now())
 
   @@index([status, createdAt])
+}
+
+// Powiadomienie w aplikacji (dzwonek w nagłówku) – wspólne dla wszystkich zalogowanych.
+// Rodzaj: ANKIETA (nowa ankieta klienta). Stan „przeczytane” – User.notificationsSeenAt.
+model Notification {
+  id        String   @id @default(cuid())
+  kind      String
+  title     String
+  body      String
+  href      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

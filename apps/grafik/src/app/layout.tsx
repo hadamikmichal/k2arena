@@ -4,6 +4,7 @@ import { Source_Sans_3 } from "next/font/google";
 import { getSession } from "@/lib/auth";
 import { logout } from "./actions";
 import { NavLinks } from "@/components/NavLinks";
+import { NotificationBell } from "@/components/NotificationBell";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({ subsets: ["latin", "latin-ext"], variable: "--font-source-sans", display: "swap" });
@@ -42,10 +43,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 md:order-none md:mx-0 md:w-auto md:overflow-visible md:px-0">
                 <NavLinks items={nav} />
               </div>
-              <form action={logout} className="ml-auto flex items-center gap-3 text-sm">
-                <span className="hidden font-semibold sm:inline">{session.name}</span>
-                <button className="btn">Wyloguj</button>
-              </form>
+              <div className="ml-auto flex items-center gap-3 text-sm">
+                <NotificationBell />
+                <form action={logout} className="flex items-center gap-3">
+                  <span className="hidden font-semibold sm:inline">{session.name}</span>
+                  <button className="btn">Wyloguj</button>
+                </form>
+              </div>
             </div>
           </header>
         )}

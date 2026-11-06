@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { ageOn, FORM_STATUSES, FORM_STATUS_LABEL } from "@/lib/clientForm";
 import { todayWarsaw } from "@/lib/time";
-import { whatsappConfig } from "@/lib/whatsapp";
 import { FormsView } from "./FormsView";
 
 export default async function AnkietyPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string }> }) {
@@ -40,9 +39,6 @@ export default async function AnkietyPage({ searchParams }: { searchParams: Prom
         </form>
         <Link href="/ankiety/qr" className="btn">Kod QR</Link>
       </div>
-      {!whatsappConfig().enabled && session.role === "ADMIN" && (
-        <p className="alert-warn">Powiadomienia WhatsApp są wyłączone – ustaw zmienne Green-API (README, sekcja „Ankieta klienta”).</p>
-      )}
       <FormsView
         isAdmin={session.role === "ADMIN"}
         forms={forms.map((f) => ({

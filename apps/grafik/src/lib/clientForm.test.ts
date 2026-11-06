@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ageOn, initialStatus, notificationText } from "./clientForm.ts";
+import { ageOn, formNotification, initialStatus } from "./clientForm.ts";
 
 test("wszystko TAK → weryfikacja, choć jedno NIE → szkolenie", () => {
   assert.equal(initialStatus({ knowsAutobelay: true, canHarness: true, canBelay: true }), "WERYFIKACJA");
@@ -15,12 +15,9 @@ test("wiek liczony w pełnych latach", () => {
 });
 
 test("powiadomienie wymienia odpowiedzi NIE i nie zawiera danych kontaktowych", () => {
-  const msg = notificationText(
-    { id: "x", name: "Jan Kowalski", minors: 1, adult: true, knowsAutobelay: true, canHarness: true, canBelay: false },
-    "https://grafik.k2arena.pl",
-  );
-  assert.match(msg, /DO SZKOLENIA/);
-  assert.match(msg, /NIE: asekuracja/);
-  assert.match(msg, /1 osoba niepełnoletnia/);
-  assert.match(msg, /\/ankiety\?status=SZKOLENIE$/);
+  const n = formNotification({ name: "Jan Kowalski", minors: 1, adult: true, knowsAutobelay: true, canHarness: true, canBelay: false });
+  assert.equal(n.title, "Do szkolenia: Jan Kowalski");
+  assert.match(n.body, /NIE: asekuracja/);
+  assert.match(n.body, /1 osoba niepełnoletnia/);
+  assert.equal(n.href, "/ankiety?status=SZKOLENIE");
 });

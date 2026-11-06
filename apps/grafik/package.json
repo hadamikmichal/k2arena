@@ -16,8 +16,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "admin:create": "node --experimental-strip-types prisma/create-admin.ts",
-    "whatsapp:groups": "node --experimental-strip-types prisma/whatsapp-groups.ts"
+    "admin:create": "node --experimental-strip-types prisma/create-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

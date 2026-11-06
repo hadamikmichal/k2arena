@@ -1,4 +1,4 @@
-// Ankieta klienta ściany – statusy, kategorie i treść powiadomienia (czyste funkcje + testy).
+// Ankieta klienta ściany – statusy, kategorie, treść powiadomienia (czyste funkcje + testy).
 
 export const FORM_STATUSES = ["WERYFIKACJA", "SZKOLENIE", "ZAKONCZONE"] as const;
 export type FormStatus = (typeof FORM_STATUSES)[number];
@@ -38,18 +38,17 @@ export function ageOn(birthDate: string, today: string): number {
 }
 
 /**
- * Wiadomość do grupy instruktorów. Celowo bez telefonu, e-maila i daty urodzenia –
- * pełne dane są tylko w aplikacji po zalogowaniu (link).
+ * Powiadomienie w aplikacji o nowej ankiecie. Celowo bez telefonu, e-maila i daty urodzenia –
+ * pełne dane są na liście ankiet (link).
  */
-export function notificationText(f: SkillAnswers & { id: string; name: string; minors: number; adult: boolean }, appUrl: string): string {
+export function formNotification(f: SkillAnswers & { name: string; minors: number; adult: boolean }): { title: string; body: string; href: string } {
   const status = initialStatus(f);
   const no = SKILL_QUESTIONS.filter((q) => !f[q.key]).map((q) => q.short);
-  const lines = [
-    status === "WERYFIKACJA" ? "🧗 *Nowa ankieta – DO WERYFIKACJI*" : "🎓 *Nowa ankieta – DO SZKOLENIA*",
-    `Klient: ${f.name}${f.adult ? "" : " (niepełnoletni)"}`,
-    status === "WERYFIKACJA" ? "Wszystkie odpowiedzi: TAK" : `NIE: ${no.join(", ")}`,
-  ];
+  const lines = [status === "WERYFIKACJA" ? "Wszystkie odpowiedzi: TAK" : `NIE: ${no.join(", ")}`];
   if (f.minors > 0) lines.push(`Pod opieką: ${f.minors} ${f.minors === 1 ? "osoba niepełnoletnia" : "osoby niepełnoletnie"}`);
-  lines.push(`${appUrl}/ankiety?status=${status}`);
-  return lines.join("\n");
+  return {
+    title: `${status === "WERYFIKACJA" ? "Do weryfikacji" : "Do szkolenia"}: ${f.name}${f.adult ? "" : " (niepełnoletni)"}`,
+    body: lines.join(" · "),
+    href: `/ankiety?status=${status}`,
+  };
 }
