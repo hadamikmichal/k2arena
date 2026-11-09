@@ -3,9 +3,11 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { computeStats } from "@/lib/stats";
 import { EMPLOYMENT_SHORT } from "@/lib/employment";
+import { toCsv } from "@/lib/formStats";
+import { toXlsx } from "@/lib/xlsx";
 
 const isDate = (s: string | null) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
-const h = (min: number) => (min / 60).toFixed(2).replace(".", ",");
+const h = (min: number) => Math.round((min / 60) * 100) / 100;
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -21,12 +23,22 @@ export async function GET(req: NextRequest) {
     s.name, EMPLOYMENT_SHORT[s.employment], s.daysWorked, h(s.operatorMin), h(s.routesettingMin), h(s.sectionMin), h(s.totalMin),
     s.sectionsDone, s.sectionsPlanned, s.sectionsCancelled,
   ]);
-  // Średnik jako separator i BOM – Excel w polskiej wersji otwiera to poprawnie.
-  const csv = "﻿" + [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const table = { header, rows };
+  const name = `k2-statystyki-${from}_${to}`;
+  if (req.nextUrl.searchParams.get("format") === "xlsx") {
+    return new NextResponse(new Uint8Array(await toXlsx([{ name: "Statystyki", table }])), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${name}.xlsx"`,
+      },
+    });
+  }
+  // CSV z liczbami po polsku (przecinek dziesiętny), średnik jako separator i BOM – Excel w polskiej wersji otwiera to poprawnie.
+  const csv = toCsv({ header, rows: rows.map((r) => r.map((c) => (typeof c === "number" ? String(c).replace(".", ",") : c))) });
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="k2-statystyki-${from}_${to}.csv"`,
+      "Content-Disposition": `attachment; filename="${name}.csv"`,
     },
   });
 }

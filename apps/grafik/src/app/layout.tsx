@@ -4,6 +4,7 @@ import { Source_Sans_3 } from "next/font/google";
 import { getSession } from "@/lib/auth";
 import { logout } from "./actions";
 import { NavLinks } from "@/components/NavLinks";
+import { NotificationBell } from "@/components/NotificationBell";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({ subsets: ["latin", "latin-ext"], variable: "--font-source-sans", display: "swap" });
@@ -17,6 +18,7 @@ const ADMIN_NAV = [
   { href: "/grafik", label: "Grafik" },
   { href: "/sekcje", label: "Sekcje" },
   { href: "/dyspozycyjnosc", label: "Dyspozycyjność" },
+  { href: "/ankiety", label: "Ankiety" },
   { href: "/instruktorzy", label: "Instruktorzy" },
   { href: "/statystyki", label: "Statystyki" },
   { href: "/ustawienia", label: "Ustawienia" },
@@ -26,12 +28,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getSession();
   const nav = session?.role === "ADMIN"
     ? [...ADMIN_NAV, { href: "/moj-grafik", label: "Konto" }]
-    : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }];
+    : [{ href: "/moj-grafik", label: "Mój grafik" }, { href: "/dyspozycyjnosc", label: "Dyspozycyjność" }, { href: "/ankiety", label: "Ankiety" }];
   return (
     <html lang="pl" className={sourceSans.variable}>
       <body className="min-h-screen">
         {session && (
-          <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", borderColor: "var(--border)" }}>
+          <header className="print:hidden sticky top-0 z-30 border-b backdrop-blur" style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", borderColor: "var(--border)" }}>
             <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
               <Link href="/" className="flex items-center gap-3" aria-label="K2 Arena – grafik, strona główna">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,10 +43,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="order-last -mx-4 w-[calc(100%+2rem)] overflow-x-auto px-4 md:order-none md:mx-0 md:w-auto md:overflow-visible md:px-0">
                 <NavLinks items={nav} />
               </div>
-              <form action={logout} className="ml-auto flex items-center gap-3 text-sm">
-                <span className="hidden font-semibold sm:inline">{session.name}</span>
-                <button className="btn">Wyloguj</button>
-              </form>
+              <div className="ml-auto flex items-center gap-3 text-sm">
+                <NotificationBell />
+                <form action={logout} className="flex items-center gap-3">
+                  <span className="hidden font-semibold sm:inline">{session.name}</span>
+                  <button className="btn">Wyloguj</button>
+                </form>
+              </div>
             </div>
           </header>
         )}

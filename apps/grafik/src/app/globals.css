@@ -121,3 +121,12 @@ body {
 @media (prefers-color-scheme: dark) {
   .brand-logo { mix-blend-mode: normal; background: #fff; padding: 3px 6px; border-radius: 6px; box-sizing: content-box; }
 }
+
+/* Wydruk ankiet (/ankiety/druk): A4, każda ankieta na osobnej stronie. */
+@page { size: A4; margin: 14mm; }
+@media print {
+  body { background: #fff; }
+  main { padding: 0 !important; max-width: none !important; }
+  .print-sheet { break-after: page; }
+  .print-sheet:last-of-type { break-after: auto; }
+}

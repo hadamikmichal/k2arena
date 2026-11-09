@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { appUrl } from "@/lib/appUrl";
 import { computeStats } from "@/lib/stats";
 import { SHIFT_LABEL } from "@/lib/calendar";
 import { addDays, fmtDayShort, fmtHours, fmtMin, monthBounds, todayWarsaw } from "@/lib/time";
@@ -26,7 +27,7 @@ export default async function MojGrafikPage() {
   const month = monthBounds(today.slice(0, 7));
   const [stats] = user.role === "INSTRUCTOR" ? await computeStats(month.from, month.to, user.id) : [];
   const rules = await getRules();
-  const icalUrl = `${process.env.APP_URL ?? "http://localhost:3010"}/api/ical/${user.icalToken}`;
+  const icalUrl = `${await appUrl()}/api/ical/${user.icalToken}`;
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
