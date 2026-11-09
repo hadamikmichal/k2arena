@@ -26,6 +26,7 @@ model User {
   createdAt               DateTime                 @default(now())
   // Powiadomienia nowsze niż ta data są dla użytkownika nieprzeczytane (dzwonek w nagłówku).
   notificationsSeenAt     DateTime                 @default(now())
+  pushSubscriptions       PushSubscription[]
   shifts                  Shift[]
   sectionSeries           SectionSeries[]
   sectionSessions         SectionSession[]
@@ -165,4 +166,19 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// Subskrypcja Web Push jednego urządzenia (telefon z aplikacją na ekranie początkowym, przeglądarka).
+// Powiadomienia przychodzą też przy zablokowanym ekranie. Wygasłe subskrypcje są usuwane przy wysyłce.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Source_Sans_3 } from "next/font/google";
 import { getSession } from "@/lib/auth";
@@ -12,7 +12,11 @@ const sourceSans = Source_Sans_3({ subsets: ["latin", "latin-ext"], variable: "-
 export const metadata: Metadata = {
   title: "Grafik instruktorów – K2 Arena",
   description: "Grafik pracy instruktorów wspinaczkowych K2 Arena",
+  // Aplikacja dodana do ekranu początkowego iPhone'a (warunek powiadomień push na iOS).
+  appleWebApp: { capable: true, title: "K2 Grafik", statusBarStyle: "default" },
 };
+
+export const viewport: Viewport = { themeColor: "#f6b533" };
 
 const ADMIN_NAV = [
   { href: "/grafik", label: "Grafik" },
@@ -44,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <NavLinks items={nav} />
               </div>
               <div className="ml-auto flex items-center gap-3 text-sm">
-                <NotificationBell />
+                <NotificationBell vapidKey={process.env.VAPID_PUBLIC_KEY} />
                 <form action={logout} className="flex items-center gap-3">
                   <span className="hidden font-semibold sm:inline">{session.name}</span>
                   <button className="btn">Wyloguj</button>
