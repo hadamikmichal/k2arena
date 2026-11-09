@@ -18,6 +18,7 @@ import type { Rules } from "@/lib/rules";
 import { EMPLOYMENT_TYPES } from "@/lib/employment";
 import { ageOn, CATEGORIES, CONSENT_VERSION, FORM_STATUSES, formNotification, initialStatus } from "@/lib/clientForm";
 import { notify } from "@/lib/notifications";
+import { sendPush } from "@/lib/push";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -537,4 +538,35 @@ export async function deleteClientForm(id: string): Promise<void> {
   await requireAdmin();
   await prisma.clientForm.delete({ where: { id } });
   revalidatePath("/ankiety");
+}
+
+// ---------- Powiadomienia push (telefon / zablokowany ekran) ----------
+
+const pushSubSchema = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+});
+
+export async function savePushSubscription(sub: unknown): Promise<void> {
+  const session = await requireUser();
+  const v = pushSubSchema.parse(sub);
+  const userAgent = (await headers()).get("user-agent")?.slice(0, 300) || null;
+  // Ten sam endpoint (urządzenie) może przejść do innej osoby po przelogowaniu.
+  await prisma.pushSubscription.upsert({
+    where: { endpoint: v.endpoint },
+    create: { userId: session.sub, endpoint: v.endpoint, p256dh: v.keys.p256dh, auth: v.keys.auth, userAgent },
+    update: { userId: session.sub, p256dh: v.keys.p256dh, auth: v.keys.auth, userAgent },
+  });
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  const session = await requireUser();
+  await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: session.sub } });
+}
+
+export async function sendTestPush(): Promise<FormState> {
+  const session = await requireUser();
+  const r = await sendPush({ title: "Test powiadomień K2 Arena", body: "Działa! Tak będą wyglądać powiadomienia o nowych ankietach.", href: "/ankiety", tag: "test" }, session.sub);
+  if (!r.sent) return { error: "Nie wysłano – to urządzenie nie ma włączonych powiadomień" };
+  return { ok: true, message: `Wysłano na ${r.sent} urządz.` };
 }

@@ -11,6 +11,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Publiczne: logowanie, ankieta klienta (/formularz), feed iCal (chroniony tokenem w URL), zasoby statyczne.
-  matcher: ["/((?!login|formularz|api/ical|_next|favicon.ico|icon.png|k2-arena-logo.png).*)"],
+  // Publiczne: logowanie, ankieta klienta (/formularz), feed iCal (chroniony tokenem w URL), zasoby statyczne, service worker i manifest PWA.
+  matcher: ["/((?!login|formularz|api/ical|_next|favicon.ico|icon.png|apple-icon.png|icons/|sw.js|manifest.webmanifest|k2-arena-logo.png).*)"],
 };

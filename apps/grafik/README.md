@@ -83,8 +83,33 @@ Kod QR do wydruku: zakładka **Ankiety → Kod QR** (link bierze się z `APP_URL
 
 Po wysłaniu ankiety wszyscy zalogowani dostają powiadomienie w aplikacji – dzwonek w nagłówku z licznikiem nowych
 (imię i nazwisko, wynik: weryfikacja / szkolenie, link do listy). Aplikacja sprawdza nowe powiadomienia co 30 s.
-Po kliknięciu *Włącz w przeglądarce* w dzwonku nowe ankiety pokazują się też jako powiadomienie systemowe – dopóki aplikacja
-jest otwarta w którejś karcie (np. na komputerze w recepcji). Powiadomienia starsze niż 90 dni są usuwane, ankiety zostają.
+Powiadomienia starsze niż 90 dni są usuwane, ankiety zostają.
+
+### Powiadomienia na telefonie (Web Push)
+
+Powiadomienia przychodzą na telefon jak z normalnej aplikacji – także przy zamkniętej aplikacji i zablokowanym ekranie.
+Działa to przez Web Push (service worker `public/sw.js`, `src/lib/push.ts`), bez sklepu z aplikacjami.
+
+**Jednorazowo (admin):** wygeneruj klucze i dodaj je na Vercelu, potem wdróż ponownie:
+
+```bash
+npx web-push generate-vapid-keys
+npx vercel env add VAPID_PUBLIC_KEY production
+npx vercel env add VAPID_PRIVATE_KEY production
+```
+
+Opcjonalnie `VAPID_SUBJECT` (domyślnie `mailto:admin@k2arena.pl`). Kluczy nie zmieniaj później – po zmianie każdy musi
+włączyć powiadomienia od nowa. Lokalnie dopisz te same zmienne do `.env`.
+
+**Każdy instruktor na swoim telefonie:**
+
+- **Android (Chrome):** zaloguj się → dzwonek → **Włącz** → *Zezwól*. Warto też *Menu ⋮ → Dodaj do ekranu głównego*.
+- **iPhone (iOS 16.4+):** w **Safari** otwórz aplikację → *Udostępnij* → **Do ekranu początkowego** → otwórz aplikację z ikony K2
+  → zaloguj się → dzwonek → **Włącz** → *Pozwól*. Bez dodania do ekranu początkowego iOS nie pozwala na powiadomienia.
+- Sprawdzenie: dzwonek → **Wyślij test**, zablokuj telefon.
+
+Każde urządzenie włącza się osobno (telefon, komputer w recepcji). Bez kluczy VAPID działa tylko dzwonek w aplikacji
+i powiadomienie systemowe, gdy aplikacja jest otwarta w karcie.
 
 ### Wydruk, eksport i statystyki ankiet (podkładka prawna)
 
@@ -104,6 +129,7 @@ prisma/seed.ts          dane demo
 src/lib/rules.ts        silnik reguł (czyste funkcje + testy)
 src/lib/calendar.ts     generator iCal
 src/lib/google.ts       synchronizacja z Google Calendar API
+src/lib/push.ts         powiadomienia Web Push na telefony
 src/lib/clientForm.ts   ankieta klienta: statusy, kategorie, treść powiadomienia
 src/lib/notifications.ts powiadomienia w aplikacji (dzwonek)
 src/lib/formStats.ts    statystyki ankiet, tabele do CSV/Excela
