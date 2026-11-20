@@ -2,14 +2,15 @@
 
 import { useActionState, useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteClientForm, reviewClientForm, setClientFormStatus } from "../actions";
+import { deleteClientForm, resendClientFormEmail, reviewClientForm, setClientFormStatus } from "../actions";
 import { Modal } from "@/components/Modal";
-import { CATEGORIES, REVIEW_TEXT, SKILL_QUESTIONS } from "@/lib/clientForm";
+import { CATEGORIES, REVIEW_TEXT, SKILL_QUESTIONS, zonesText } from "@/lib/clientForm";
 
 type FormRow = {
   id: string; name: string; phone: string; email: string; birthDate: string; age: number; minors: string[];
   answers: { knowsAutobelay: boolean; canHarness: boolean; canBelay: boolean };
   status: string; category: string | null; note: string | null; reviewedBy: string | null; reviewedAt: string | null; createdAt: string;
+  zones: string; wall: boolean; signed: boolean; emailedAt: string | null;
 };
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw", dateStyle: "short", timeStyle: "short" });
@@ -23,6 +24,12 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
     router.refresh();
   }, [router]);
   const run = (fn: () => Promise<void>) => start(async () => { await fn(); router.refresh(); });
+  const resend = (f: FormRow) =>
+    start(async () => {
+      const r = await resendClientFormEmail(f.id);
+      alert(r?.error ?? r?.message ?? "Wysłano");
+      router.refresh();
+    });
 
   if (!forms.length) return <p className="card muted">Brak ankiet w tej kategorii.</p>;
   return (
@@ -30,7 +37,7 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
       <div className="card overflow-x-auto p-0">
         <table className="table min-w-[860px]">
           <thead>
-            <tr><th>Klient</th><th>Kontakt</th><th>Umiejętności</th><th>Pod opieką</th><th>Wysłano</th><th /></tr>
+            <tr><th>Klient</th><th>Kontakt</th><th>Strefy / umiejętności</th><th>Pod opieką</th><th>Wysłano</th><th /></tr>
           </thead>
           <tbody>
             {forms.map((f) => (
@@ -46,7 +53,8 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                   <a href={`mailto:${f.email}`} className="muted">{f.email}</a>
                 </td>
                 <td className="text-xs">
-                  {SKILL_QUESTIONS.map((q) => (
+                  <div className="mb-1 max-w-56 whitespace-normal font-semibold">{zonesText(f.zones)}</div>
+                  {f.wall && SKILL_QUESTIONS.map((q) => (
                     <div key={q.key}>
                       <span className="font-bold" style={{ color: f.answers[q.key] ? "var(--ok)" : "var(--err)" }}>{f.answers[q.key] ? "TAK" : "NIE"}</span> {q.short}
                     </div>
@@ -55,6 +63,9 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                 <td className="text-xs">{f.minors.length ? f.minors.map((m) => <div key={m}>{m}</div>) : <span className="muted">—</span>}</td>
                 <td className="whitespace-nowrap text-xs">
                   {fmt(f.createdAt)}
+                  <div className="muted">
+                    {f.signed ? "podpisano" : "bez podpisu"} · {f.emailedAt ? "PDF wysłany do recepcji" : "PDF nie wysłany"}
+                  </div>
                   {f.status === "ZAKONCZONE" && (
                     <div className="mt-1">
                       <span className="badge badge-accent">Kat. {f.category?.split(",").join(" ")}</span>
@@ -65,7 +76,11 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                 </td>
                 <td className="whitespace-nowrap text-right">
                   <a className="btn mr-1" href={`/ankiety/druk?id=${f.id}`} target="_blank" rel="noopener">Drukuj</a>
-                  {f.status !== "ZAKONCZONE" && <button className="btn btn-primary mr-1" onClick={() => setReview(f)}>Zatwierdź</button>}
+                  <a className="btn mr-1" href={`/api/ankiety/pdf?id=${f.id}`} target="_blank" rel="noopener">PDF</a>
+                  <button className="btn mr-1" disabled={pending} onClick={() => resend(f)} title="Wyślij PDF na e-mail recepcji">
+                    {f.emailedAt ? "Wyślij ponownie" : "Wyślij do recepcji"}
+                  </button>
+                  {f.wall && f.status !== "ZAKONCZONE" && <button className="btn btn-primary mr-1" onClick={() => setReview(f)}>Zatwierdź</button>}
                   {f.status === "WERYFIKACJA" && (
                     <button className="btn mr-1" disabled={pending} onClick={() => run(() => setClientFormStatus(f.id, "SZKOLENIE"))}>Na szkolenie</button>
                   )}

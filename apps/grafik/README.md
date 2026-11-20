@@ -31,7 +31,7 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
 | **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV i Excel. |
 | **Ustawienia** | admin | Edytowalne reguły + status synchronizacji Google. |
-| **Ankiety** | instruktor, admin | Ankiety klientów ściany (publiczny formularz `/formularz`, otwierany kodem QR). Wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku, *Drukuj* przy każdej ankiecie. Admin: *Raport i eksport* (statystyki, CSV, Excel, wydruk wszystkich z okresu), usuwanie. |
+| **Ankiety** | instruktor, admin | Ankiety klientów (publiczny formularz `/formularz`, otwierany kodem QR). Klient zaznacza strefy: ściana / boulder / siłownia / fitness / sauna – część o ścianie (oświadczenia, umiejętności) wypełnia tylko osoba idąca na ścianę; pozostali trafiają do *Bez ściany*. Na końcu podpis palcem, PDF idzie mailem na recepcję. Ściana: wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku, *Drukuj* przy każdej ankiecie. Admin: *Raport i eksport* (statystyki, CSV, Excel, wydruk wszystkich z okresu), usuwanie. |
 | **Mój grafik** | instruktor | Najbliższe 4 tygodnie, statystyki miesiąca, link do kalendarza, zmiana hasła. |
 
 ## Reguły grafiku (`src/lib/rules.ts`)
@@ -84,6 +84,26 @@ Kod QR do wydruku: zakładka **Ankiety → Kod QR** (link bierze się z `APP_URL
 Po wysłaniu ankiety wszyscy zalogowani dostają powiadomienie w aplikacji – dzwonek w nagłówku z licznikiem nowych
 (imię i nazwisko, wynik: weryfikacja / szkolenie, link do listy). Aplikacja sprawdza nowe powiadomienia co 30 s.
 Powiadomienia starsze niż 90 dni są usuwane, ankiety zostają.
+
+### Strefy, podpis i PDF na e-mail recepcji
+
+- **Strefy:** klient zaznacza, z czego korzysta (ściana wspinaczkowa, boulder, siłownia, fitness, sauna). Bez ściany
+  wypełnia tylko dane, oświadczenie zdrowotne, RODO i podpis – ankieta trafia do zakładki *Bez ściany* i nie generuje
+  powiadomienia dla instruktorów.
+- **Podpis:** pole na końcu formularza, podpis palcem / rysikiem / myszą (zapisany jako obraz PNG, widoczny na wydruku i w PDF).
+- **PDF na e-mail:** po wysłaniu ankiety aplikacja generuje PDF (ta sama treść co wydruk, z podpisem) i wysyła go
+  na `RECEPTION_EMAIL` przez SMTP. Na liście ankiet: *PDF* (pobranie) i *Wyślij do recepcji / Wyślij ponownie*.
+  Konfiguracja na Vercelu (potem ponowne wdrożenie):
+
+  ```bash
+  npx vercel env add SMTP_HOST production       # np. smtp.gmail.com
+  npx vercel env add SMTP_PORT production       # 465
+  npx vercel env add SMTP_USER production       # adres skrzynki nadawczej
+  npx vercel env add SMTP_PASS production       # Gmail: hasło aplikacji (wymaga weryfikacji dwuetapowej)
+  npx vercel env add RECEPTION_EMAIL production # testowo: zaraski12345@gmail.com; kilka adresów po przecinku
+  ```
+
+  Bez tych zmiennych ankiety działają normalnie, tylko mail nie wychodzi (na liście: „PDF nie wysłany”).
 
 ### Powiadomienia na telefonie (Web Push)
 

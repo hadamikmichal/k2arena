@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdmin, requireUser } from "@/lib/auth";
-import { ageOn, CATEGORIES, consentTexts, FORM_STATUS_LABEL, initialStatus, REVIEW_TEXT, SKILL_QUESTIONS } from "@/lib/clientForm";
+import { ageOn, CATEGORIES, consentTexts, FORM_STATUS_LABEL, initialStatus, REVIEW_TEXT, SKILL_QUESTIONS, zonesText } from "@/lib/clientForm";
 import { loadForms, parseRange } from "@/lib/formData";
 import type { FormRecord } from "@/lib/formStats";
 import { dateWarsaw, fmtDate } from "@/lib/time";
@@ -59,12 +59,14 @@ function Sheet({ f, printedAt, printedBy }: { f: FormRecord; printedAt: string; 
           <Row label="Data urodzenia">{f.birthDate} ({age} l. w dniu wypełnienia{age < 18 ? " – niepełnoletni" : ""})</Row>
           <Row label="Nr telefonu">{f.phone}</Row>
           <Row label="E-mail">{f.email}</Row>
+          <Row label="Korzysta z"><b>{zonesText(f.zones)}</b></Row>
           <Row label="Data i godzina wypełnienia"><b>{dt(f.createdAt)}</b></Row>
         </tbody>
       </table>
 
       <Check>{t.health}</Check>
 
+      {f.wall && (<>
       <section className="space-y-2">
         <p className="font-extrabold uppercase">Strefa wspinania</p>
         <ul className="list-disc space-y-1 pl-5">{t.riskItems.map((x) => <li key={x}>{x}</li>)}</ul>
@@ -87,8 +89,20 @@ function Sheet({ f, printedAt, printedBy }: { f: FormRecord; printedAt: string; 
       </table>
 
       <Check>{t.liability}</Check>
+      </>)}
       <Check>{t.rodo}</Check>
 
+      <section className="space-y-1">
+        <p className="font-semibold">Podpis klienta:</p>
+        {f.signature ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={f.signature} alt={`Podpis: ${f.name}`} className="h-20 w-auto border-b" style={{ borderColor: "#5b5f55" }} />
+        ) : (
+          <p style={{ color: "#5b5f55" }}>(brak podpisu – formularz wysłany przed wprowadzeniem podpisu na ekranie)</p>
+        )}
+      </section>
+
+      {f.wall && (
       <section className="space-y-1 rounded border p-3" style={{ borderColor: "#17181c" }}>
         <p className="font-extrabold uppercase">Wypełnia instruktor</p>
         <p>{REVIEW_TEXT}</p>
@@ -101,10 +115,12 @@ function Sheet({ f, printedAt, printedBy }: { f: FormRecord; printedAt: string; 
           <p>Status: <b>{FORM_STATUS_LABEL[f.status] ?? f.status}</b> (wynik przy wysłaniu: {FORM_STATUS_LABEL[initialStatus(f)]})</p>
         )}
       </section>
+      )}
 
       <footer className="space-y-0.5 border-t pt-2 text-[11px]" style={{ borderColor: "#d8d6d0", color: "#5b5f55" }}>
         <p>
-          Formularz wypełniony elektronicznie; zaznaczenie wszystkich oświadczeń było wymagane do wysłania, a wysłanie formularza zastąpiło podpis.
+          Formularz wypełniony elektronicznie; zaznaczenie wszystkich oświadczeń było wymagane do wysłania
+          {f.signature ? ", klient złożył podpis na ekranie." : ", a wysłanie formularza zastąpiło podpis."}
           Treść oświadczeń: wersja {f.consentVersion}.
         </p>
         <p>

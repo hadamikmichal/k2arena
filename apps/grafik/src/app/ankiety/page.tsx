@@ -13,13 +13,18 @@ export default async function AnkietyPage({ searchParams }: { searchParams: Prom
   const [forms, counts] = await Promise.all([
     prisma.clientForm.findMany({
       where: { status, ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { email: { contains: q, mode: "insensitive" } }] } : {}) },
-      orderBy: { createdAt: status === "ZAKONCZONE" ? "desc" : "asc" },
+      orderBy: { createdAt: status === "ZAKONCZONE" || status === "BEZ_SCIANY" ? "desc" : "asc" },
+      omit: { signature: true },
       include: { reviewedBy: { select: { name: true } } },
       take: 200,
     }),
     prisma.clientForm.groupBy({ by: ["status"], _count: true }),
   ]);
   const count = Object.fromEntries(counts.map((c) => [c.status, c._count]));
+  // Sam fakt podpisu, bez pobierania obrazków (każdy to kilkadziesiąt kB).
+  const signedIds = new Set(
+    (await prisma.clientForm.findMany({ where: { id: { in: forms.map((f) => f.id) }, signature: { not: null } }, select: { id: true } })).map((f) => f.id),
+  );
   const today = todayWarsaw();
 
   return (
@@ -29,7 +34,7 @@ export default async function AnkietyPage({ searchParams }: { searchParams: Prom
         <div className="seg" role="tablist">
           {FORM_STATUSES.map((s) => (
             <Link key={s} href={`/ankiety?status=${s}`} role="tab" aria-selected={s === status}>
-              {FORM_STATUS_LABEL[s]}{s !== "ZAKONCZONE" && count[s] ? ` (${count[s]})` : ""}
+              {FORM_STATUS_LABEL[s]}{(s === "WERYFIKACJA" || s === "SZKOLENIE") && count[s] ? ` (${count[s]})` : ""}
             </Link>
           ))}
         </div>
@@ -48,6 +53,7 @@ export default async function AnkietyPage({ searchParams }: { searchParams: Prom
           answers: { knowsAutobelay: f.knowsAutobelay, canHarness: f.canHarness, canBelay: f.canBelay },
           status: f.status, category: f.category, note: f.note, reviewedBy: f.reviewedBy?.name ?? null,
           reviewedAt: f.reviewedAt?.toISOString() ?? null, createdAt: f.createdAt.toISOString(),
+          zones: f.zones, wall: f.wall, signed: signedIds.has(f.id), emailedAt: f.emailedAt?.toISOString() ?? null,
         }))}
       />
     </div>

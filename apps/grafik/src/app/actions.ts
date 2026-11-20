@@ -16,7 +16,8 @@ import { addDays, dateRange, isoWeekday, monthBounds, toMin, todayWarsaw } from 
 import { runGenerator } from "@/lib/planning";
 import type { Rules } from "@/lib/rules";
 import { EMPLOYMENT_TYPES } from "@/lib/employment";
-import { ageOn, CATEGORIES, CONSENT_VERSION, FORM_STATUSES, formNotification, initialStatus } from "@/lib/clientForm";
+import { ageOn, CATEGORIES, CONSENT_VERSION, FORM_STATUSES, formNotification, initialStatus, ZONES } from "@/lib/clientForm";
+import { emailFormToReception } from "@/lib/formMail";
 import { notify } from "@/lib/notifications";
 import { sendPush } from "@/lib/push";
 
@@ -445,15 +446,24 @@ const clientFormSchema = z.object({
   birthDate: date,
   phone: z.string().trim().regex(/^\+?[\d\s-]{9,20}$/, "Nieprawidłowy numer telefonu"),
   email: z.string().trim().toLowerCase().email("Nieprawidłowy e-mail").max(200),
+  health: accepted("Potwierdź oświadczenie o braku przeciwwskazań zdrowotnych i regulaminie"),
+  rodo: accepted("Potwierdź zapoznanie się z informacją o danych osobowych"),
+  // PNG z pola podpisu (data URL); limit ~400 kB.
+  signature: z
+    .string({ required_error: "Złóż podpis w polu na końcu formularza" })
+    .regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/, "Złóż podpis w polu na końcu formularza")
+    .max(400_000, "Podpis jest zbyt duży – wyczyść go i podpisz się ponownie"),
+});
+
+// Część tylko dla osób idących na ścianę wspinaczkową.
+const wallSchema = z.object({
   minor1: z.string().trim().max(120).optional(),
   minor2: z.string().trim().max(120).optional(),
   knowsAutobelay: yesNo,
   canHarness: yesNo,
   canBelay: yesNo,
-  health: accepted("Potwierdź oświadczenie o braku przeciwwskazań zdrowotnych i regulaminie"),
   risk: accepted("Potwierdź oświadczenia ze strefy wspinania"),
   liability: accepted("Potwierdź odpowiedzialność za przestrzeganie zasad"),
-  rodo: accepted("Potwierdź zapoznanie się z informacją o danych osobowych"),
 });
 
 export type ClientFormState = { ok?: boolean; status?: string; error?: string } | null;
@@ -462,14 +472,20 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
   // Pułapka na boty: pole niewidoczne dla ludzi.
   if (fd.get("website")) return { ok: true, status: "WERYFIKACJA" };
   try {
-    const v = clientFormSchema.parse(Object.fromEntries(fd));
+    const raw = Object.fromEntries(fd);
+    const v = clientFormSchema.parse(raw);
+    const zones = ZONES.map((z) => z.code).filter((c) => fd.getAll("zones").includes(c));
+    if (!zones.length) return { error: "Zaznacz, z czego chcesz korzystać" };
+    const wall = zones.includes("SCIANA");
+    const w = wall ? wallSchema.parse(raw) : null;
     const today = todayWarsaw();
     const age = ageOn(v.birthDate, today);
     if (v.birthDate > today || age > 110) return { error: "Nieprawidłowa data urodzenia" };
-    const answers = { knowsAutobelay: v.knowsAutobelay === "TAK", canHarness: v.canHarness === "TAK", canBelay: v.canBelay === "TAK" };
-    const minors = [v.minor1, v.minor2].filter((m): m is string => Boolean(m));
+    // Bez ściany pytania o umiejętności nie padają – zapisujemy NIE, w statystykach liczą się tylko ankiety ze ścianą.
+    const answers = { knowsAutobelay: w?.knowsAutobelay === "TAK", canHarness: w?.canHarness === "TAK", canBelay: w?.canBelay === "TAK" };
+    const minors = [w?.minor1, w?.minor2].filter((m): m is string => Boolean(m));
     if (minors.length && age < 18) return { error: "Opiekę nad osobami niepełnoletnimi może sprawować tylko osoba pełnoletnia" };
-    const status = initialStatus(answers);
+    const status = initialStatus({ ...answers, wall });
     // Dowód złożenia oświadczeń (wydruk ankiety): wersja treści, IP i przeglądarka.
     const h = await headers();
     const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip"))?.trim().slice(0, 64) || null;
@@ -478,13 +494,22 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
       data: {
         name: v.name, birthDate: v.birthDate, phone: v.phone, email: v.email, minor1: minors[0] ?? null, minor2: minors[1] ?? null,
         ...answers, status, consentVersion: CONSENT_VERSION, ip, userAgent,
+        zones: zones.join(","), wall, signature: v.signature,
       },
     });
     after(async () => {
+      // Instruktorów powiadamiamy tylko o osobach idących na ścianę – reszta nie wymaga ich działania.
+      if (wall) {
+        try {
+          await notify({ kind: "ANKIETA", ...formNotification({ ...answers, name: form.name, minors: minors.length, adult: age >= 18 }) });
+        } catch (err) {
+          console.error("[powiadomienia] nie zapisano powiadomienia:", err);
+        }
+      }
       try {
-        await notify({ kind: "ANKIETA", ...formNotification({ ...answers, name: form.name, minors: minors.length, adult: age >= 18 }) });
+        await emailFormToReception(form.id);
       } catch (err) {
-        console.error("[powiadomienia] nie zapisano powiadomienia:", err);
+        console.error("[mail] nie wysłano PDF ankiety do recepcji:", err);
       }
     });
     revalidatePath("/ankiety");
@@ -532,6 +557,20 @@ export async function setClientFormStatus(id: string, status: string): Promise<v
 export async function markNotificationsSeen(): Promise<void> {
   const session = await requireUser();
   await prisma.user.update({ where: { id: session.sub }, data: { notificationsSeenAt: new Date() } });
+}
+
+/** Ponowna wysyłka PDF ankiety na e-mail recepcji (z listy ankiet). */
+export async function resendClientFormEmail(id: string): Promise<FormState> {
+  await requireUser();
+  try {
+    const sent = await emailFormToReception(id);
+    if (!sent) return { error: "Nie wysłano – e-mail nie jest skonfigurowany (SMTP_HOST, RECEPTION_EMAIL)" };
+    revalidatePath("/ankiety");
+    return { ok: true, message: "Wysłano PDF na e-mail recepcji" };
+  } catch (err) {
+    console.error("[mail] ponowna wysyłka ankiety:", err);
+    return { error: "Nie udało się wysłać e-maila – sprawdź ustawienia SMTP" };
+  }
 }
 
 export async function deleteClientForm(id: string): Promise<void> {
