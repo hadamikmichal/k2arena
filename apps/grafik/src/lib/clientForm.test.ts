@@ -1,11 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ageOn, formNotification, initialStatus } from "./clientForm.ts";
+import { ageOn, formNotification, initialStatus, zonesText } from "./clientForm.ts";
 
 test("wszystko TAK → weryfikacja, choć jedno NIE → szkolenie", () => {
   assert.equal(initialStatus({ knowsAutobelay: true, canHarness: true, canBelay: true }), "WERYFIKACJA");
   assert.equal(initialStatus({ knowsAutobelay: true, canHarness: false, canBelay: true }), "SZKOLENIE");
   assert.equal(initialStatus({ knowsAutobelay: false, canHarness: false, canBelay: false }), "SZKOLENIE");
+});
+
+test("bez ściany → BEZ_SCIANY niezależnie od odpowiedzi", () => {
+  assert.equal(initialStatus({ knowsAutobelay: false, canHarness: false, canBelay: false, wall: false }), "BEZ_SCIANY");
+  assert.equal(initialStatus({ knowsAutobelay: true, canHarness: true, canBelay: true, wall: true }), "WERYFIKACJA");
+  assert.equal(zonesText("SCIANA,SAUNA"), "Ściana wspinaczkowa, Sauna");
 });
 
 test("wiek liczony w pełnych latach", () => {

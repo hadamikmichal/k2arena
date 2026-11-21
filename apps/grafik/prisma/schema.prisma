@@ -136,6 +136,10 @@ model ClientForm {
   email          String
   minor1         String?
   minor2         String?
+  // Strefy, z których klient korzysta (ZONES w src/lib/clientForm.ts), np. "SCIANA,SAUNA".
+  // wall = false → tylko siłownia / fitness / sauna / boulder: bez części o ścianie i bez weryfikacji instruktora.
+  zones          String    @default("SCIANA")
+  wall           Boolean   @default(true)
   knowsAutobelay Boolean
   canHarness     Boolean
   canBelay       Boolean
@@ -149,6 +153,10 @@ model ClientForm {
   consentVersion String    @default("2026-11-06")
   ip             String?
   userAgent      String?
+  // Podpis złożony palcem na ekranie (PNG jako data URL).
+  signature      String?
+  // Kiedy PDF ankiety poszedł na e-mail recepcji (null = nie wysłano / błąd).
+  emailedAt      DateTime?
   createdAt      DateTime  @default(now())
 
   @@index([status, createdAt])

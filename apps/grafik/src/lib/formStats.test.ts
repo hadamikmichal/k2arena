@@ -6,6 +6,7 @@ const base: FormRecord = {
   id: "1", name: "Jan Kowalski", birthDate: "1990-05-01", phone: "600100200", email: "jan@example.com", minor1: null, minor2: null,
   knowsAutobelay: true, canHarness: true, canBelay: true, status: "WERYFIKACJA", category: null, note: null,
   reviewedBy: null, reviewedAt: null, consentVersion: "2026-11-06", ip: null, userAgent: null, createdAt: new Date("2026-11-06T10:00:00Z"),
+  zones: "SCIANA", wall: true, signature: null, emailedAt: null,
 };
 
 test("statystyki: wynik przy wysłaniu, odpowiedzi NIE, kategorie, małoletni, miesiące", () => {
@@ -18,14 +19,25 @@ test("statystyki: wynik przy wysłaniu, odpowiedzi NIE, kategorie, małoletni, m
   assert.equal(s.total, 3);
   assert.equal(s.verify, 1);
   assert.equal(s.training, 2);
-  assert.deepEqual(s.byStatus, { WERYFIKACJA: 1, SZKOLENIE: 1, ZAKONCZONE: 1 });
+  assert.deepEqual(s.byStatus, { WERYFIKACJA: 1, SZKOLENIE: 1, ZAKONCZONE: 1, BEZ_SCIANY: 0 });
   assert.deepEqual(s.noByQuestion, { knowsAutobelay: 1, canHarness: 1, canBelay: 1 });
   assert.deepEqual(s.categories, { A: 1, W: 1, P: 0 });
   assert.equal(s.minorClients, 1);
   assert.equal(s.withMinors, 1);
   assert.equal(s.minorsUnderCare, 2);
-  assert.deepEqual(s.byMonth, [{ month: "2026-11", total: 3, verify: 1, training: 2 }]);
+  assert.deepEqual(s.byMonth, [{ month: "2026-11", total: 3, verify: 1, training: 2, noWall: 0 }]);
   assert.deepEqual(s.byReviewer, [{ name: "Ola", count: 1 }]);
+});
+
+test("statystyki: ankiety bez ściany nie liczą się do weryfikacji/szkolenia ani odpowiedzi NIE", () => {
+  const noWall = { ...base, zones: "SILOWNIA,SAUNA", wall: false, knowsAutobelay: false, canHarness: false, canBelay: false, status: "BEZ_SCIANY" };
+  const s = computeFormStats([base, { ...noWall, id: "2" }, { ...base, id: "3", zones: "SCIANA,BOULDER" }]);
+  assert.equal(s.verify, 2);
+  assert.equal(s.training, 0);
+  assert.equal(s.noWall, 1);
+  assert.deepEqual(s.noByQuestion, { knowsAutobelay: 0, canHarness: 0, canBelay: 0 });
+  assert.deepEqual(s.zones, { SCIANA: 2, BOULDER: 1, SILOWNIA: 1, FITNESS: 0, SAUNA: 1 });
+  assert.equal(s.byStatus.BEZ_SCIANY, 1);
 });
 
 test("CSV: średnik, BOM, cudzysłowy i ochrona przed formułami", () => {

@@ -2,7 +2,8 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { submitClientForm } from "../actions";
-import { CONSENT_VERSION, consentTexts, SKILL_QUESTIONS } from "@/lib/clientForm";
+import { CONSENT_VERSION, consentTexts, SKILL_QUESTIONS, ZONES } from "@/lib/clientForm";
+import { SignaturePad } from "@/components/SignaturePad";
 
 const TEXT = consentTexts(CONSENT_VERSION);
 
@@ -14,17 +15,24 @@ export function ClientFormView() {
 
 function FormRound({ onNext }: { onNext: () => void }) {
   const [state, action, pending] = useActionState(submitClientForm, null);
+  const [zones, setZones] = useState<string[]>([]);
+  const [signed, setSigned] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const wall = zones.includes("SCIANA");
 
   if (state?.ok) {
     const verify = state.status === "WERYFIKACJA";
+    const noWall = state.status === "BEZ_SCIANY";
     return (
       <div className="card space-y-4 p-6 text-center">
-        <p className="text-4xl" aria-hidden>{verify ? "🧗" : "🎓"}</p>
+        <p className="text-4xl" aria-hidden>{noWall ? "💪" : verify ? "🧗" : "🎓"}</p>
         <h2 className="text-xl font-bold">Dziękujemy, formularz został wysłany</h2>
         <p className="text-2">
-          {verify
-            ? "Zgłoś się do instruktora – sprawdzi Twoje umiejętności, zanim zaczniesz wspinać się samodzielnie."
-            : "Zgłoś się do instruktora – zanim zaczniesz się wspinać, przejdziesz wprowadzenie START / szkolenie."}
+          {noWall
+            ? "Możesz korzystać z wybranych stref. Miłego treningu!"
+            : verify
+              ? "Zgłoś się do instruktora – sprawdzi Twoje umiejętności, zanim zaczniesz wspinać się samodzielnie."
+              : "Zgłoś się do instruktora – zanim zaczniesz się wspinać, przejdziesz wprowadzenie START / szkolenie."}
         </p>
         <button type="button" className="btn mx-auto" onClick={onNext}>Wypełnij kolejny formularz</button>
       </div>
@@ -37,6 +45,9 @@ function FormRound({ onNext }: { onNext: () => void }) {
       className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
+        if (!zones.length) return setLocalError("Zaznacz, z czego chcesz korzystać");
+        if (!signed) return setLocalError("Złóż podpis w polu na końcu formularza");
+        setLocalError(null);
         const fd = new FormData(e.currentTarget);
         startTransition(() => action(fd));
       }}
@@ -65,6 +76,55 @@ function FormRound({ onNext }: { onNext: () => void }) {
         <Consent name="health">{TEXT.health}</Consent>
       </section>
 
+      <section className="card space-y-3 p-5">
+        <h2 className="text-lg font-extrabold uppercase" style={{ letterSpacing: "-0.01em" }}>Z czego chcesz korzystać?</h2>
+        <p className="muted text-sm">Zaznacz wszystko, co dotyczy. Część o ścianie wspinaczkowej wypełniasz tylko, jeśli idziesz na ścianę.</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {ZONES.map((z) => (
+            <label
+              key={z.code}
+              className="flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 font-semibold has-[:checked]:border-[var(--ink)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--accent)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <input
+                type="checkbox"
+                name="zones"
+                value={z.code}
+                checked={zones.includes(z.code)}
+                onChange={(e) => setZones((cur) => (e.target.checked ? [...cur, z.code] : cur.filter((c) => c !== z.code)))}
+                className="h-5 w-5 shrink-0 accent-[var(--accent)]"
+              />
+              {z.label}
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {wall && <WallSection />}
+
+      <section className="card space-y-3 p-5">
+        <Consent name="rodo">{TEXT.rodo}</Consent>
+      </section>
+
+      <section className="card space-y-3 p-5">
+        <h2 className="text-lg font-extrabold uppercase" style={{ letterSpacing: "-0.01em" }}>Podpis</h2>
+        <p className="muted text-sm">Podpisując, potwierdzasz prawdziwość danych i zaznaczonych oświadczeń.</p>
+        <SignaturePad name="signature" onChange={setSigned} />
+      </section>
+
+      {(localError || state?.error) && <p className="alert-error" role="alert">{localError ?? state?.error}</p>}
+      <button className="btn btn-primary w-full justify-center py-3 text-base" disabled={pending}>
+        {pending ? "Wysyłanie…" : "Wyślij formularz"}
+      </button>
+      <p className="muted text-center text-xs">Data wypełnienia zapisuje się automatycznie. Kopię formularza otrzymuje recepcja.</p>
+    </form>
+  );
+}
+
+/** Część tylko dla osób idących na ścianę wspinaczkową (lina / autoasekuracja). */
+function WallSection() {
+  return (
+    <>
       <section className="card space-y-3 p-5">
         <h2 className="text-lg font-extrabold uppercase" style={{ letterSpacing: "-0.01em" }}>Strefa wspinania</h2>
         <ul className="text-2 list-disc space-y-2 pl-5 text-sm">
@@ -103,15 +163,8 @@ function FormRound({ onNext }: { onNext: () => void }) {
 
       <section className="card space-y-3 p-5">
         <Consent name="liability">{TEXT.liability}</Consent>
-        <Consent name="rodo">{TEXT.rodo}</Consent>
       </section>
-
-      {state?.error && <p className="alert-error" role="alert">{state.error}</p>}
-      <button className="btn btn-primary w-full justify-center py-3 text-base" disabled={pending}>
-        {pending ? "Wysyłanie…" : "Wyślij formularz"}
-      </button>
-      <p className="muted text-center text-xs">Data wypełnienia zapisuje się automatycznie. Wysłanie formularza zastępuje podpis.</p>
-    </form>
+    </>
   );
 }
 

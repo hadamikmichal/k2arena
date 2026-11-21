@@ -1,13 +1,28 @@
 // Ankieta klienta ściany – statusy, kategorie, treść powiadomienia (czyste funkcje + testy).
 
-export const FORM_STATUSES = ["WERYFIKACJA", "SZKOLENIE", "ZAKONCZONE"] as const;
+export const FORM_STATUSES = ["WERYFIKACJA", "SZKOLENIE", "ZAKONCZONE", "BEZ_SCIANY"] as const;
 export type FormStatus = (typeof FORM_STATUSES)[number];
 
 export const FORM_STATUS_LABEL: Record<string, string> = {
   WERYFIKACJA: "Do weryfikacji",
   SZKOLENIE: "Do szkolenia",
   ZAKONCZONE: "Zakończone",
+  BEZ_SCIANY: "Bez ściany",
 };
+
+// Strefy obiektu. Tylko „Ściana” wymaga części o wspinaniu z liną (oświadczenia, umiejętności, weryfikacja instruktora).
+export const ZONES = [
+  { code: "SCIANA", label: "Ściana wspinaczkowa (lina, autoasekuracja)" },
+  { code: "BOULDER", label: "Boulder" },
+  { code: "SILOWNIA", label: "Siłownia" },
+  { code: "FITNESS", label: "Fitness" },
+  { code: "SAUNA", label: "Sauna" },
+] as const;
+
+export const ZONE_LABEL: Record<string, string> = Object.fromEntries(ZONES.map((z) => [z.code, z.label.replace(/ \(.*\)$/, "")]));
+
+/** "SCIANA,SAUNA" → "Ściana wspinaczkowa, Sauna". */
+export const zonesText = (zones: string) => zones.split(",").filter(Boolean).map((z) => ZONE_LABEL[z] ?? z).join(", ");
 
 // Kategorie nadawane przez instruktora po wprowadzeniu START / szkoleniu ABC / PRO.
 export const CATEGORIES = [
@@ -59,8 +74,9 @@ export const REVIEW_TEXT =
 
 export type SkillAnswers = { knowsAutobelay: boolean; canHarness: boolean; canBelay: boolean };
 
-/** Wszystkie odpowiedzi TAK → weryfikacja umiejętności; choć jedno NIE → szkolenie. */
-export function initialStatus(a: SkillAnswers): FormStatus {
+/** Bez ściany → nic do sprawdzania; wszystkie odpowiedzi TAK → weryfikacja umiejętności; choć jedno NIE → szkolenie. */
+export function initialStatus(a: SkillAnswers & { wall?: boolean }): FormStatus {
+  if (a.wall === false) return "BEZ_SCIANY";
   return a.knowsAutobelay && a.canHarness && a.canBelay ? "WERYFIKACJA" : "SZKOLENIE";
 }
 

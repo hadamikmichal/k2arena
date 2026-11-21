@@ -1,5 +1,5 @@
 // Statystyki i eksport ankiet klientów (czyste funkcje + testy).
-import { ageOn, CATEGORIES, FORM_STATUS_LABEL, FORM_STATUSES, initialStatus, SKILL_QUESTIONS } from "./clientForm.ts";
+import { ageOn, CATEGORIES, FORM_STATUS_LABEL, FORM_STATUSES, initialStatus, SKILL_QUESTIONS, ZONES, zonesText } from "./clientForm.ts";
 import { dateWarsaw } from "./time.ts";
 
 export type FormRecord = {
@@ -7,25 +7,29 @@ export type FormRecord = {
   knowsAutobelay: boolean; canHarness: boolean; canBelay: boolean;
   status: string; category: string | null; note: string | null; reviewedBy: string | null; reviewedAt: Date | null;
   consentVersion: string; ip: string | null; userAgent: string | null; createdAt: Date;
+  zones: string; wall: boolean; signature: string | null; emailedAt: Date | null;
 };
 
 export type FormStats = {
   total: number;
   verify: number; // przy wysłaniu: wszystkie TAK
   training: number; // przy wysłaniu: choć jedno NIE
+  noWall: number; // tylko siłownia / fitness / sauna / boulder
+  zones: Record<string, number>;
   byStatus: Record<string, number>;
   noByQuestion: Record<string, number>;
   minorClients: number; // klient niepełnoletni w dniu wypełnienia
   withMinors: number; // ankiety z osobami małoletnimi pod opieką
   minorsUnderCare: number;
   categories: Record<string, number>;
-  byMonth: { month: string; total: number; verify: number; training: number }[];
+  byMonth: { month: string; total: number; verify: number; training: number; noWall: number }[];
   byReviewer: { name: string; count: number }[];
 };
 
 export function computeFormStats(forms: FormRecord[]): FormStats {
   const s: FormStats = {
-    total: forms.length, verify: 0, training: 0,
+    total: forms.length, verify: 0, training: 0, noWall: 0,
+    zones: Object.fromEntries(ZONES.map((z) => [z.code, 0])),
     byStatus: Object.fromEntries(FORM_STATUSES.map((k) => [k, 0])),
     noByQuestion: Object.fromEntries(SKILL_QUESTIONS.map((q) => [q.key, 0])),
     minorClients: 0, withMinors: 0, minorsUnderCare: 0,
@@ -37,12 +41,14 @@ export function computeFormStats(forms: FormRecord[]): FormStats {
   for (const f of forms) {
     const day = dateWarsaw(f.createdAt);
     const first = initialStatus(f);
-    const m = months.get(day.slice(0, 7)) ?? { month: day.slice(0, 7), total: 0, verify: 0, training: 0 };
+    const m = months.get(day.slice(0, 7)) ?? { month: day.slice(0, 7), total: 0, verify: 0, training: 0, noWall: 0 };
     m.total++;
-    if (first === "WERYFIKACJA") { s.verify++; m.verify++; } else { s.training++; m.training++; }
+    if (first === "BEZ_SCIANY") { s.noWall++; m.noWall++; }
+    else if (first === "WERYFIKACJA") { s.verify++; m.verify++; } else { s.training++; m.training++; }
     months.set(m.month, m);
     s.byStatus[f.status] = (s.byStatus[f.status] ?? 0) + 1;
-    for (const q of SKILL_QUESTIONS) if (!f[q.key]) s.noByQuestion[q.key]++;
+    for (const z of f.zones.split(",")) if (z in s.zones) s.zones[z]++;
+    if (f.wall) for (const q of SKILL_QUESTIONS) if (!f[q.key]) s.noByQuestion[q.key]++;
     if (ageOn(f.birthDate, day) < 18) s.minorClients++;
     const minors = [f.minor1, f.minor2].filter(Boolean).length;
     if (minors) { s.withMinors++; s.minorsUnderCare += minors; }
@@ -68,13 +74,15 @@ export function statsTable(s: FormStats, from: string, to: string): Table {
     ["Razem", "Ankiety wypełnione", s.total, ""],
     ["Wynik przy wysłaniu", "Do weryfikacji (wszystkie TAK)", s.verify, pct(s.verify, s.total)],
     ["Wynik przy wysłaniu", "Do szkolenia (choć jedno NIE)", s.training, pct(s.training, s.total)],
+    ["Wynik przy wysłaniu", "Bez ściany (siłownia / fitness / sauna / boulder)", s.noWall, pct(s.noWall, s.total)],
+    ...ZONES.map((z) => ["Strefy", z.label, s.zones[z.code], pct(s.zones[z.code], s.total)]),
     ...FORM_STATUSES.map((k) => ["Obecny status", FORM_STATUS_LABEL[k], s.byStatus[k] ?? 0, pct(s.byStatus[k] ?? 0, s.total)]),
-    ...SKILL_QUESTIONS.map((q) => ["Odpowiedź NIE", q.label, s.noByQuestion[q.key], pct(s.noByQuestion[q.key], s.total)]),
+    ...SKILL_QUESTIONS.map((q) => ["Odpowiedź NIE (ankiety ze ścianą)", q.label, s.noByQuestion[q.key], pct(s.noByQuestion[q.key], s.total - s.noWall)]),
     ...CATEGORIES.map((c) => ["Nadane kategorie", c.label, s.categories[c.code], pct(s.categories[c.code], s.byStatus.ZAKONCZONE ?? 0)]),
     ["Klienci", "Niepełnoletni w dniu wypełnienia", s.minorClients, pct(s.minorClients, s.total)],
     ["Klienci", "Ankiety z osobami małoletnimi pod opieką", s.withMinors, pct(s.withMinors, s.total)],
     ["Klienci", "Osoby małoletnie pod opieką (łącznie)", s.minorsUnderCare, ""],
-    ...s.byMonth.map((m) => ["Miesiąc", m.month, m.total, `weryfikacja ${m.verify} / szkolenie ${m.training}`]),
+    ...s.byMonth.map((m) => ["Miesiąc", m.month, m.total, `weryfikacja ${m.verify} / szkolenie ${m.training} / bez ściany ${m.noWall}`]),
     ...s.byReviewer.map((r) => ["Zatwierdził instruktor", r.name, r.count, ""]),
   ];
   return { header: ["Sekcja", "Pozycja", "Liczba", "Udział / uwagi"], rows };
@@ -88,15 +96,15 @@ const dt = (d: Date | null) =>
 export function formsTable(forms: FormRecord[]): Table {
   return {
     header: [
-      "ID", "Data wypełnienia", "Imię i nazwisko", "Data urodzenia", "Wiek", "Telefon", "E-mail", "Małoletni 1", "Małoletni 2",
+      "ID", "Data wypełnienia", "Imię i nazwisko", "Data urodzenia", "Wiek", "Telefon", "E-mail", "Strefy", "Małoletni 1", "Małoletni 2",
       ...SKILL_QUESTIONS.map((q) => q.label), "Oświadczenia zaakceptowane", "Wersja oświadczeń",
-      "Wynik przy wysłaniu", "Status", "Kategoria", "Zatwierdził", "Data zatwierdzenia", "Uwagi", "Adres IP", "Przeglądarka",
+      "Wynik przy wysłaniu", "Status", "Kategoria", "Zatwierdził", "Data zatwierdzenia", "Uwagi", "Podpis", "PDF wysłany do recepcji", "Adres IP", "Przeglądarka",
     ],
     rows: forms.map((f) => [
-      f.id, dt(f.createdAt), f.name, f.birthDate, ageOn(f.birthDate, dateWarsaw(f.createdAt)), f.phone, f.email, f.minor1 ?? "", f.minor2 ?? "",
-      ...SKILL_QUESTIONS.map((q) => yn(f[q.key])), "TAK (wszystkie wymagane)", f.consentVersion,
+      f.id, dt(f.createdAt), f.name, f.birthDate, ageOn(f.birthDate, dateWarsaw(f.createdAt)), f.phone, f.email, zonesText(f.zones), f.minor1 ?? "", f.minor2 ?? "",
+      ...SKILL_QUESTIONS.map((q) => (f.wall ? yn(f[q.key]) : "—")), "TAK (wszystkie wymagane)", f.consentVersion,
       FORM_STATUS_LABEL[initialStatus(f)], FORM_STATUS_LABEL[f.status] ?? f.status, f.category?.split(",").join(" ") ?? "",
-      f.reviewedBy ?? "", dt(f.reviewedAt), f.note ?? "", f.ip ?? "", f.userAgent ?? "",
+      f.reviewedBy ?? "", dt(f.reviewedAt), f.note ?? "", f.signature ? "TAK" : "NIE", dt(f.emailedAt), f.ip ?? "", f.userAgent ?? "",
     ]),
   };
 }

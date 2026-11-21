@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { CATEGORIES, FORM_STATUS_LABEL, FORM_STATUSES, SKILL_QUESTIONS } from "@/lib/clientForm";
+import { CATEGORIES, FORM_STATUS_LABEL, FORM_STATUSES, SKILL_QUESTIONS, ZONES } from "@/lib/clientForm";
 import { loadForms, parseRange } from "@/lib/formData";
 import { computeFormStats } from "@/lib/formStats";
 import { fmtDate, monthBounds, todayWarsaw } from "@/lib/time";
@@ -67,8 +67,9 @@ export default async function RaportPage({ searchParams }: { searchParams: Promi
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Tile label="Ankiety wypełnione" value={s.total} />
+        <Tile label="Bez ściany (siłownia, fitness, sauna, boulder)" value={s.noWall} sub={pct(s.noWall, s.total)} />
         <Tile label="Do weryfikacji (wszystkie TAK)" value={s.verify} sub={pct(s.verify, s.total)} />
         <Tile label="Do szkolenia (choć jedno NIE)" value={s.training} sub={pct(s.training, s.total)} />
         <Tile label="Zatwierdzone przez instruktora" value={s.byStatus.ZAKONCZONE ?? 0} sub={pct(s.byStatus.ZAKONCZONE ?? 0, s.total)} />
@@ -79,7 +80,16 @@ export default async function RaportPage({ searchParams }: { searchParams: Promi
           title="Obecny status"
           rows={FORM_STATUSES.map((k) => [FORM_STATUS_LABEL[k], s.byStatus[k] ?? 0, pct(s.byStatus[k] ?? 0, s.total)])}
         />
-        <StatTable title="Odpowiedzi NIE" rows={SKILL_QUESTIONS.map((q) => [q.label, s.noByQuestion[q.key], pct(s.noByQuestion[q.key], s.total)])} />
+        <StatTable
+          title="Strefy"
+          note="Klient może zaznaczyć kilka stref."
+          rows={ZONES.map((z) => [z.label, s.zones[z.code], pct(s.zones[z.code], s.total)])}
+        />
+        <StatTable
+          title="Odpowiedzi NIE"
+          note="Tylko ankiety osób idących na ścianę."
+          rows={SKILL_QUESTIONS.map((q) => [q.label, s.noByQuestion[q.key], pct(s.noByQuestion[q.key], s.total - s.noWall)])}
+        />
         <StatTable
           title="Nadane kategorie"
           note="Udział wśród zatwierdzonych; klient może mieć kilka kategorii."
@@ -95,8 +105,8 @@ export default async function RaportPage({ searchParams }: { searchParams: Promi
         />
         <StatTable
           title="Wg miesiąca"
-          head={["Miesiąc", "Razem", "Weryfikacja / szkolenie"]}
-          rows={s.byMonth.map((m) => [m.month, m.total, `${m.verify} / ${m.training}`])}
+          head={["Miesiąc", "Razem", "Weryfikacja / szkolenie / bez ściany"]}
+          rows={s.byMonth.map((m) => [m.month, m.total, `${m.verify} / ${m.training} / ${m.noWall}`])}
         />
         <StatTable title="Zatwierdzenia wg instruktora" rows={s.byReviewer.map((r) => [r.name, r.count, pct(r.count, s.byStatus.ZAKONCZONE ?? 0)])} />
       </div>
