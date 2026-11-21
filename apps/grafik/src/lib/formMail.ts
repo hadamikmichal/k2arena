@@ -1,4 +1,4 @@
-// PDF ankiety na e-mail recepcji (po wysłaniu formularza i ręcznie z listy ankiet).
+// PDF ankiety na e-mail recepcji – po zatwierdzeniu przez instruktora i ręcznie z listy (tylko zatwierdzone).
 import { prisma } from "./db";
 import { loadForms } from "./formData";
 import { buildFormPdf, formPdfName } from "./formPdf";
@@ -21,7 +21,7 @@ export async function emailFormToReception(id: string): Promise<boolean> {
     to,
     subject: `Ankieta: ${f.name} – ${zonesText(f.zones)}`,
     text: [
-      `Nowy formularz danych osobowych K2 Arena.`,
+      `Formularz danych osobowych K2 Arena – zatwierdzony przez instruktora.`,
       ``,
       `Imię i nazwisko: ${f.name}`,
       `Data urodzenia: ${f.birthDate}`,
@@ -29,6 +29,8 @@ export async function emailFormToReception(id: string): Promise<boolean> {
       `E-mail: ${f.email}`,
       `Korzysta z: ${zonesText(f.zones)}`,
       `Status: ${FORM_STATUS_LABEL[f.status] ?? f.status}`,
+      ...(f.category ? [`Kategoria: ${f.category.split(",").join(" ")}`] : []),
+      ...(f.reviewedAt ? [`Zatwierdził(a): ${f.reviewedBy ?? "—"}, ${dt(f.reviewedAt)}`] : []),
       `Wypełniono: ${dt(f.createdAt)}`,
       ``,
       `Pełna kopia formularza z podpisem w załączniku (PDF).`,
