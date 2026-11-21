@@ -1,4 +1,5 @@
-// PDF ankiety na e-mail recepcji – po zatwierdzeniu przez instruktora i ręcznie z listy (tylko zatwierdzone).
+// PDF ankiety na e-mail recepcji: ściana – po zatwierdzeniu przez instruktora; bez ściany – od razu po wysłaniu.
+// Ręcznie z listy tylko zatwierdzone i „bez ściany”.
 import { prisma } from "./db";
 import { loadForms } from "./formData";
 import { buildFormPdf, formPdfName } from "./formPdf";
@@ -21,7 +22,7 @@ export async function emailFormToReception(id: string): Promise<boolean> {
     to,
     subject: `Ankieta: ${f.name} – ${zonesText(f.zones)}`,
     text: [
-      `Formularz danych osobowych K2 Arena – zatwierdzony przez instruktora.`,
+      f.wall ? `Formularz danych osobowych K2 Arena – zatwierdzony przez instruktora.` : `Formularz danych osobowych K2 Arena (bez ściany).`,
       ``,
       `Imię i nazwisko: ${f.name}`,
       `Data urodzenia: ${f.birthDate}`,

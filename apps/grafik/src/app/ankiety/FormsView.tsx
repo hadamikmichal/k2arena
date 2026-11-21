@@ -64,7 +64,7 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                 <td className="whitespace-nowrap text-xs">
                   {fmt(f.createdAt)}
                   <div className="muted">
-                    {f.signed ? "podpisano" : "bez podpisu"} · {f.emailedAt ? "PDF wysłany do recepcji" : f.status === "ZAKONCZONE" ? "PDF nie wysłany" : "PDF po zatwierdzeniu"}
+                    {f.signed ? "podpisano" : "bez podpisu"} · {f.emailedAt ? "PDF wysłany do recepcji" : f.status === "ZAKONCZONE" || f.status === "BEZ_SCIANY" ? "PDF nie wysłany" : "PDF po zatwierdzeniu"}
                   </div>
                   {f.status === "ZAKONCZONE" && (
                     <div className="mt-1">
@@ -77,7 +77,7 @@ export function FormsView({ forms, isAdmin }: { forms: FormRow[]; isAdmin: boole
                 <td className="whitespace-nowrap text-right">
                   <a className="btn mr-1" href={`/ankiety/druk?id=${f.id}`} target="_blank" rel="noopener">Drukuj</a>
                   <a className="btn mr-1" href={`/api/ankiety/pdf?id=${f.id}`} target="_blank" rel="noopener">PDF</a>
-                  {f.status === "ZAKONCZONE" && (
+                  {(f.status === "ZAKONCZONE" || f.status === "BEZ_SCIANY") && (
                     <button className="btn mr-1" disabled={pending} onClick={() => resend(f)} title="Wyślij PDF na e-mail recepcji">
                       {f.emailedAt ? "Wyślij ponownie" : "Wyślij do recepcji"}
                     </button>

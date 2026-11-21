@@ -506,7 +506,15 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
           console.error("[powiadomienia] nie zapisano powiadomienia:", err);
         }
       }
-      // PDF do recepcji idzie dopiero po zatwierdzeniu przez instruktora (reviewClientForm).
+      // Ściana: PDF do recepcji dopiero po zatwierdzeniu przez instruktora (reviewClientForm).
+      // Bez ściany nie ma czego zatwierdzać – PDF idzie od razu.
+      if (!wall) {
+        try {
+          await emailFormToReception(form.id);
+        } catch (err) {
+          console.error("[mail] nie wysłano PDF ankiety do recepcji:", err);
+        }
+      }
     });
     revalidatePath("/ankiety");
     return { ok: true, status };
@@ -568,7 +576,7 @@ export async function resendClientFormEmail(id: string): Promise<FormState> {
   await requireUser();
   try {
     const form = await prisma.clientForm.findUnique({ where: { id }, select: { status: true } });
-    if (form?.status !== "ZAKONCZONE") return { error: "PDF wysyłamy dopiero po zatwierdzeniu ankiety przez instruktora" };
+    if (form?.status !== "ZAKONCZONE" && form?.status !== "BEZ_SCIANY") return { error: "PDF wysyłamy dopiero po zatwierdzeniu ankiety przez instruktora" };
     const sent = await emailFormToReception(id);
     if (!sent) return { error: "Nie wysłano – e-mail nie jest skonfigurowany (SMTP_HOST, RECEPTION_EMAIL)" };
     revalidatePath("/ankiety");
