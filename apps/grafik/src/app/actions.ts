@@ -506,10 +506,14 @@ export async function submitClientForm(_: ClientFormState, fd: FormData): Promis
           console.error("[powiadomienia] nie zapisano powiadomienia:", err);
         }
       }
-      try {
-        await emailFormToReception(form.id);
-      } catch (err) {
-        console.error("[mail] nie wysłano PDF ankiety do recepcji:", err);
+      // Ściana: PDF do recepcji dopiero po zatwierdzeniu przez instruktora (reviewClientForm).
+      // Bez ściany nie ma czego zatwierdzać – PDF idzie od razu.
+      if (!wall) {
+        try {
+          await emailFormToReception(form.id);
+        } catch (err) {
+          console.error("[mail] nie wysłano PDF ankiety do recepcji:", err);
+        }
       }
     });
     revalidatePath("/ankiety");
@@ -534,6 +538,14 @@ export async function reviewClientForm(_: FormState, fd: FormData): Promise<Form
     await prisma.clientForm.update({
       where: { id: v.id },
       data: { status: "ZAKONCZONE", category: codes.join(","), note: v.note || null, reviewedById: session.sub, reviewedAt: new Date() },
+    });
+    // Dopiero zatwierdzona ankieta (z kategorią i instruktorem w PDF) trafia na e-mail recepcji.
+    after(async () => {
+      try {
+        await emailFormToReception(v.id);
+      } catch (err) {
+        console.error("[mail] nie wysłano PDF ankiety do recepcji:", err);
+      }
     });
     revalidatePath("/ankiety");
     return { ok: true };
@@ -563,6 +575,8 @@ export async function markNotificationsSeen(): Promise<void> {
 export async function resendClientFormEmail(id: string): Promise<FormState> {
   await requireUser();
   try {
+    const form = await prisma.clientForm.findUnique({ where: { id }, select: { status: true } });
+    if (form?.status !== "ZAKONCZONE" && form?.status !== "BEZ_SCIANY") return { error: "PDF wysyłamy dopiero po zatwierdzeniu ankiety przez instruktora" };
     const sent = await emailFormToReception(id);
     if (!sent) return { error: "Nie wysłano – e-mail nie jest skonfigurowany (SMTP_HOST, RECEPTION_EMAIL)" };
     revalidatePath("/ankiety");

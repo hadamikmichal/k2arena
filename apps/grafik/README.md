@@ -31,7 +31,7 @@ Hasła demo są tylko do lokalnego testowania – na produkcji utwórz konta od 
 | **Instruktorzy** | admin | Konta, rola, typ zatrudnienia (stały / zlecenie), kolor, link iCal. |
 | **Statystyki** | admin | Miesiąc lub dowolny zakres: dni pracy, godziny dyżuru / routesettingu / sekcji, liczba sekcji (odbyte / zaplanowane / odwołane), eksport CSV i Excel. |
 | **Ustawienia** | admin | Edytowalne reguły + status synchronizacji Google. |
-| **Ankiety** | instruktor, admin | Ankiety klientów (publiczny formularz `/formularz`, otwierany kodem QR). Klient zaznacza strefy: ściana / boulder / siłownia / fitness / sauna – część o ścianie (oświadczenia, umiejętności) wypełnia tylko osoba idąca na ścianę; pozostali trafiają do *Bez ściany*. Na końcu podpis palcem, PDF idzie mailem na recepcję. Ściana: wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku, *Drukuj* przy każdej ankiecie. Admin: *Raport i eksport* (statystyki, CSV, Excel, wydruk wszystkich z okresu), usuwanie. |
+| **Ankiety** | instruktor, admin | Ankiety klientów (publiczny formularz `/formularz`, otwierany kodem QR). Klient zaznacza strefy: ściana / boulder / siłownia / fitness / sauna – część o ścianie (oświadczenia, umiejętności) wypełnia tylko osoba idąca na ścianę; pozostali trafiają do *Bez ściany*. Na końcu podpis palcem. PDF idzie mailem na recepcję: ściana – dopiero po zatwierdzeniu przez instruktora, bez ściany – od razu. Ściana: wszystkie odpowiedzi TAK → *Do weryfikacji*, choć jedno NIE → *Do szkolenia*. Instruktor zatwierdza klienta i nadaje kategorię A / W / P. Strona *Kod QR* do wydruku, *Drukuj* przy każdej ankiecie. Admin: *Raport i eksport* (statystyki, CSV, Excel, wydruk wszystkich z okresu), usuwanie. |
 | **Mój grafik** | instruktor | Najbliższe 4 tygodnie, statystyki miesiąca, link do kalendarza, zmiana hasła. |
 
 ## Reguły grafiku (`src/lib/rules.ts`)
@@ -91,8 +91,11 @@ Powiadomienia starsze niż 90 dni są usuwane, ankiety zostają.
   wypełnia tylko dane, oświadczenie zdrowotne, RODO i podpis – ankieta trafia do zakładki *Bez ściany* i nie generuje
   powiadomienia dla instruktorów.
 - **Podpis:** pole na końcu formularza, podpis palcem / rysikiem / myszą (zapisany jako obraz PNG, widoczny na wydruku i w PDF).
-- **PDF na e-mail:** po wysłaniu ankiety aplikacja generuje PDF (ta sama treść co wydruk, z podpisem) i wysyła go
-  na `RECEPTION_EMAIL` przez SMTP. Na liście ankiet: *PDF* (pobranie) i *Wyślij do recepcji / Wyślij ponownie*.
+- **PDF na e-mail:** dopiero gdy instruktor **zatwierdzi** ankietę (weryfikacja / szkolenie, kategoria A / W / P),
+  aplikacja generuje PDF (ta sama treść co wydruk, z podpisem, kategorią i instruktorem) i wysyła go na `RECEPTION_EMAIL`
+  przez SMTP. Niezatwierdzone ankiety ze ścianą nie są wysyłane (na liście: „PDF po zatwierdzeniu”). Ankiety *Bez ściany*
+  (tylko boulder / siłownia / fitness / sauna) nie wymagają instruktora – PDF idzie od razu po wysłaniu formularza.
+  Na liście ankiet: *PDF* (pobranie) i – przy zatwierdzonych oraz „bez ściany” – *Wyślij do recepcji / Wyślij ponownie*.
   Konfiguracja na Vercelu (potem ponowne wdrożenie):
 
   ```bash
